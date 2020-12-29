@@ -8,15 +8,23 @@
 
 #pragma once
 
-#define H_NTDLL		0x1edab0ed	
-#define H_KERNEL32	0x6ddb9555
+#define H_NTDLL					0x1edab0ed	
+#define H_KERNEL32				0x6ddb9555
 
-#define H_LOCALLOCK	0x32064bd9
-#define H_LOCALFREE	0x32030e92
-#define H_LOCALSIZE	0x320a0beb
-#define H_LOCALALLOC	0x72073b5b
-#define H_LOCALUNLOCK	0xe1ba049c
-#define H_LOCALREALLOC	0x1c44e892
+#define H_LOCALLOCK				0x32064bd9
+#define H_LOCALFREE				0x32030e92
+#define H_LOCALSIZE				0x320a0beb
+#define H_LOCALALLOC				0x72073b5b
+#define H_LOCALUNLOCK				0xe1ba049c
+#define H_LOCALREALLOC				0x1c44e892
 
-#define H_FREELIBRARY	0x4ad9b11c
-#define H_LOADLIBRARYA	0xb7072fdb
+#define H_FREELIBRARY				0x4ad9b11c
+#define H_LOADLIBRARYA				0xb7072fdb
+#define H_CRYPTDECRYPT				0x4c86df12
+#define H_CRYPTENCRYPT				0xae7f897c
+#define H_CRYPTIMPORTKEY			0x1370cc7b
+#define H_CRYPTDESTROYKEY			0x0ec7f6aa
+#define H_CRYPTRELEASECONTEXT			0x674798fd
+#define H_CRYPTACQUIRECONTEXTA			0xc4e81a47
+#define H_DNSWRITEQUESTIONTOBUFFER_UTF8		0x8daca0d0
+#define H_DNSEXTRACTRECORDSFROMMESSAGE_UTF8	0x300c2cf6

