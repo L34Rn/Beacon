@@ -12,7 +12,6 @@
 #include <ntstatus.h>
 
 #include "macros.h"
-#include "beacon.h"
 #include "hashes.h"
 
 typedef struct
@@ -34,7 +33,6 @@ typedef struct
 	HMODULE Module[ 4 ];
 } BEACON_INSTANCE, *PBEACON_INSTANCE;
 
-#include "setting.h"
 #include "tebpeb.h"
 #include "hash.h"
 #include "peb.h"
