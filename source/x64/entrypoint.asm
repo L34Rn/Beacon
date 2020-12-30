@@ -34,7 +34,7 @@ Entry:
 
 	ret
 
-[SECTION .text$D]
+[SECTION .text$C]
 
 Config:
 	int3
