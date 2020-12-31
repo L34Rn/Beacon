@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 import pefile
 import argparse
+import struct
 
 def main( f = None, o = None ):
     try:
@@ -9,6 +10,14 @@ def main( f = None, o = None ):
         raw = exe.sections[0].get_data();
         end = raw.find(b'\xcc' * 4);
         raw = raw[:end]
+
+        pub = open("publickey.bin", "rb+");
+        key = pub.read(); 
+        pub.close();
+
+        if len( key ) != 0:
+            raw = raw + key;
+            raw = raw.replace( b'\x41' * 4, struct.pack('<I', len( key ) ));
 
         bin = open( o, 'wb+' );
         bin.write( raw );

@@ -22,6 +22,7 @@
 #define H_LOADLIBRARYA				0xb7072fdb
 #define H_CRYPTDECRYPT				0x4c86df12
 #define H_CRYPTENCRYPT				0xae7f897c
+#define H_CRYPTGENRANDOM			0x343d3c72
 #define H_CRYPTIMPORTKEY			0x1370cc7b
 #define H_CRYPTCREATEHASH			0x56cedcef
 #define H_CRYPTDESTROYKEY			0x0ec7f6aa

