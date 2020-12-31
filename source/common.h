@@ -40,12 +40,14 @@ typedef struct
 		FUNC( LoadLibraryA );
 		FUNC( CryptDecrypt );
 		FUNC( CryptEncrypt );
+		FUNC( CryptHashData );
 		FUNC( CryptGenRandom );
 		FUNC( CryptImportKey );
 		FUNC( CryptCreateHash );
 		FUNC( CryptDestroyKey );
 		FUNC( CryptDestroyHash );
 		FUNC( CryptSetKeyParam );
+		FUNC( CryptGetHashParam );
 		FUNC( CryptDecodeObjectEx );
 		FUNC( CryptReleaseContext );
 		FUNC( CryptAcquireContextA );
@@ -61,6 +63,7 @@ typedef struct
 #include "crypt/hmac.h"
 #include "crypt/rsa.h"
 #include "crypt/aes.h"
+#include "sha256.h"
 #include "tebpeb.h"
 #include "hash.h"
 #include "peb.h"

