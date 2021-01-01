@@ -87,7 +87,7 @@ DEFINESEC(B) PVOID BufferAddRaw( PBEACON_INSTANCE Ins, PVOID Buffer, PVOID Value
  * Appends a 1-byte int onto a buffer
  *
 -*/
-PVOID BufferAddUI1( PBEACON_INSTANCE Ins, PVOID Buffer, BYTE Value )
+DEFINESEC(B) PVOID BufferAddUI1( PBEACON_INSTANCE Ins, PVOID Buffer, BYTE Value )
 {
 	return BufferAddRaw( Ins, Buffer, &Value, 1 );
 };
@@ -101,7 +101,7 @@ PVOID BufferAddUI1( PBEACON_INSTANCE Ins, PVOID Buffer, BYTE Value )
  * Appends a 2-byte int onto a buffer
  *
 -*/
-PVOID BufferAddUI2( PBEACON_INSTANCE Ins, PVOID Buffer, USHORT Value )
+DEFINESEC(B) PVOID BufferAddUI2( PBEACON_INSTANCE Ins, PVOID Buffer, USHORT Value )
 {
 	return BufferAddRaw( Ins, Buffer, &Value, 2 );
 };
@@ -115,7 +115,7 @@ PVOID BufferAddUI2( PBEACON_INSTANCE Ins, PVOID Buffer, USHORT Value )
  * Appends a 4-byte int onto a buffer
  *
 -*/
-PVOID BufferAddUI4( PBEACON_INSTANCE Ins, PVOID Buffer, ULONG Value )
+DEFINESEC(B) PVOID BufferAddUI4( PBEACON_INSTANCE Ins, PVOID Buffer, ULONG Value )
 {
 	return BufferAddRaw( Ins, Buffer, &Value, 4 );
 };

