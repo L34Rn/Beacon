@@ -98,3 +98,38 @@ DEFINESEC(B) VOID CryptRsaFree( PBEACON_INSTANCE Ins )
 	Ins->api.CryptDestroyKey( Ins->key[0].Key );
 	Ins->api.CryptReleaseContext( Ins->key[0].Provider, 0 );
 };
+
+/*-
+ *
+ * CryptRsaEncrypt
+ *
+ * Purpose:
+ *
+ * Encrypt's the buffer using RSA
+ * PKCS #1 v1.5
+ *
+-*/
+DEFINESEC(B) BOOL CryptRsaEncrypt( PBEACON_INSTANCE Ins, 
+		                   PVOID	In, 
+				   ULONG	InLen, 
+				   PVOID*	Out,
+				   ULONG*	OutLen )
+{
+	DWORD TxtLen = InLen;
+	DWORD EncLen = InLen;
+
+	if ( Ins->api.CryptEncrypt( Ins->key[0].Key, 0, TRUE, 0, NULL, &EncLen, TxtLen ) )
+	{
+		if ((*Out = Ins->api.LocalAlloc( LPTR, EncLen )))
+		{
+			RtlCopyMemory( *Out, In, InLen );
+
+			if ( Ins->api.CryptEncrypt( Ins->key[0].Key, 0, TRUE, 0, *Out, &TxtLen, EncLen ) )
+			{
+				*OutLen = TxtLen; return TRUE;
+			};
+			Ins->api.LocalFree( *Out );
+		};
+	};
+	*Out = NULL; *OutLen = 0; return FALSE;
+};

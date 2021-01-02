@@ -29,3 +29,19 @@ DEFINESEC(B) BOOL CryptRsaInit( PBEACON_INSTANCE Ins );
  *
 -*/
 DEFINESEC(B) VOID CryptRsaFree( PBEACON_INSTANCE Ins );
+
+/*-
+ *
+ * CryptRsaEncrypt
+ *
+ * Purpose:
+ *
+ * Encrypt's the buffer using RSA
+ * PKCS #1 v1.5
+ *
+-*/
+DEFINESEC(B) BOOL CryptRsaEncrypt( PBEACON_INSTANCE Ins,
+                                   PVOID        In,
+                                   ULONG        InLen,
+                                   PVOID*       Out,
+                                   ULONG*       OutLen );
