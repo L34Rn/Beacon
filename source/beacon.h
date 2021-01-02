@@ -35,3 +35,26 @@ typedef struct __attribute__((packed, scalar_storage_order("big-endian")))
  *
 -*/
 DEFINESEC(B) PVOID BeaconComputer( PBEACON_INSTANCE Ins );
+
+/*-
+ *
+ * BeaconUsername
+ *
+ * Returns a string containing the name
+ * of the user that Beacon is running
+ * as.
+ *
+-*/
+DEFINESEC(B) PVOID BeaconUsername( PBEACON_INSTANCE Ins );
+
+/*-
+ *
+ * BeaconProcess
+ *
+ * Purpose:
+ *
+ * Returns a string containing the
+ * Beacon process name in ANSI.
+ *
+-*/
+DEFINESEC(B) PVOID BeaconProcess( PBEACON_INSTANCE Ins );

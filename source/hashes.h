@@ -11,6 +11,10 @@
 #define H_NTDLL					0x1edab0ed	
 #define H_KERNEL32				0x6ddb9555
 
+#define H_WCSLEN				0xd7bb0d31	
+#define H_WCSRCHR				0xcf1ff4a1
+#define H_WCSTOMBS				0xb34961d7
+
 #define H_GETACP				0xb28d1179
 #define H_GETOEMCP				0x8b15bfb9
 #define H_LOCALLOCK				0x32064bd9
@@ -38,6 +42,7 @@
 #define H_CRYPTDESTROYHASH			0xe7c51545
 #define H_GETCOMPUTERNAMEA			0x8c52da36
 #define H_CRYPTGETHASHPARAM			0x5de9f7ac
+#define H_LOOKUPACCOUNTSIDA			0xd51fdf8d
 #define H_CRYPTRELEASECONTEXT			0x674798fd
 #define H_CRYPTDECODEOBJECTEX			0x35691aef
 #define H_GETCURRENTPROCESSID			0x0917ded4

