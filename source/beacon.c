@@ -20,6 +20,7 @@
 -*/
 DEFINESEC(B) PVOID BeaconComputer( PBEACON_INSTANCE Ins )
 {
+	DWORD Res = 1;
 	PVOID Str = 0;
 	ULONG Len = 0;
 
@@ -29,10 +30,54 @@ DEFINESEC(B) PVOID BeaconComputer( PBEACON_INSTANCE Ins )
 		{
 			if ( Ins->api.GetComputerNameA( Str, &Len ) )
 			{
-				return Str;
+				Res = 0;
 			};
-			Ins->api.LocalFree( Str );
 		};
 	};
-	return NULL;
+
+	return Res != 1 ? 
+	       Str : Ins->api.LocalFree( Str );
+};
+
+/*-
+ *
+ * BeaconUsername
+ *
+ * Returns a string containing the name
+ * of the user that Beacon is running
+ * as.
+ *
+-*/
+DEFINESEC(B) PVOID BeaconUsername( PBEACON_INSTANCE Ins )
+{
+	PTOKEN_USER Usr = 0;
+	HANDLE      Tok = 0;
+	DWORD       Res = 1;
+	PVOID       Str = 0;
+	ULONG       Len = 0;
+
+	if ( !Ins->api.OpenThreadToken( NtCurrentThread(), TOKEN_QUERY, FALSE, &Tok ) )
+	{
+		if ( ! Ins->api.OpenProcessToken( NtCurrentProcess(), TOKEN_QUERY, &Tok ) )
+		{
+			return NULL;
+		};
+	};
+
+	if ( !Ins->api.GetTokenInformation( Tok, TokenUser, NULL, 0, &Len ) )
+	{
+		if ((Usr = Ins->api.LocalAlloc( LPTR, Len )))
+		{
+			if ( Ins->api.GetTokenInformation( Tok, TokenUser, Usr, Len, &Len ) )
+			{
+				/* Success. Lookup the account SID */
+			};
+			Ins->api.LocalFree( Usr );
+		};
+	};
+
+	Ins->api.CloseHandle( Tok ); 
+
+	return Res != 1 ? 
+	       Str : Ins->api.LocalFree( Str );
 };

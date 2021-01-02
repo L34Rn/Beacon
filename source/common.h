@@ -38,6 +38,7 @@ typedef struct
 		FUNC( LocalSize );
 		FUNC( LocalAlloc );
 		FUNC( RtlRandomEx );
+		FUNC( CloseHandle );
 		FUNC( FreeLibrary );
 		FUNC( LocalUnlock );
 		FUNC( LocalReAlloc );
@@ -50,12 +51,15 @@ typedef struct
 		FUNC( CryptImportKey );
 		FUNC( CryptCreateHash );
 		FUNC( CryptDestroyKey );
+		FUNC( OpenThreadToken );
+		FUNC( OpenProcessToken );
 		FUNC( CryptDestroyHash );
 		FUNC( GetComputerNameA );
 		FUNC( CryptSetKeyParam );
 		FUNC( CryptGetHashParam );
 		FUNC( CryptDecodeObjectEx );
 		FUNC( GetCurrentProcessId );
+		FUNC( GetTokenInformation );
 		FUNC( CryptReleaseContext );
 		FUNC( CryptAcquireContextA );
 		FUNC( CryptImportPublicKeyInfo );

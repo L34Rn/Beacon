@@ -20,17 +20,12 @@
 -*/
 DEFINESEC(B) PVOID Sha256Sum( PBEACON_INSTANCE Ins, PVOID Buf, ULONG Len )
 {
-	BOOL       Ret;
-	PVOID      Sha; 
-	DWORD      Exp;
-	DWORD      Siz;
-	HCRYPTHASH Hsh;
-	HCRYPTPROV Prv;
-
-	Exp = 4;
-	Siz = 0;
-	Ret = FALSE;
-	Sha = NULL;
+	DWORD      Res = 1;
+	PVOID      Sha = 0;
+	DWORD      Exp = 4;
+	DWORD      Siz = 0;
+	HCRYPTHASH Hsh = 0;
+	HCRYPTPROV Prv = 0;
 
 	if ( Ins->api.CryptAcquireContextA( &Prv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT | CRYPT_SILENT ) )
 	{
@@ -44,7 +39,7 @@ DEFINESEC(B) PVOID Sha256Sum( PBEACON_INSTANCE Ins, PVOID Buf, ULONG Len )
 					{
 						if ( Ins->api.CryptGetHashParam( Hsh, HP_HASHVAL, Sha, &Siz, 0 ) )
 						{
-							Ret = TRUE;
+							Res = 0;
 						};
 					};
 				};
@@ -54,5 +49,6 @@ DEFINESEC(B) PVOID Sha256Sum( PBEACON_INSTANCE Ins, PVOID Buf, ULONG Len )
 		Ins->api.CryptReleaseContext( Prv, 0 );
 	};
 
-	return Ret ? Sha : Ins->api.LocalFree( Sha );
+	return Res != 1 ? 
+	       Sha : Ins->api.LocalFree( Sha );
 };
