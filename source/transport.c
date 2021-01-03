@@ -44,31 +44,6 @@ DEFINESEC(B) VOID TransportFree( PBEACON_INSTANCE Ins )
 
 /*-
  *
- * TransportConnect
- *
- * Purpose:
- *
- * Connects to the target so that the 
- * agent may begin the IO loop.
- *
--*/
-DEFINESEC(B) BOOL TransportConnect( PBEACON_INSTANCE Ins, struct sockaddr_in sin )
-{
-	Ins->Socket = Ins->api.WSASocketA( AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, 0 ); 
-
-	return ! Ins->api.WSAConnect(
-			Ins->Socket,
-			CPTR( &sin ),
-			sizeof( sin ),
-			NULL,
-			NULL,
-			NULL,
-			NULL
-			) ? TRUE : FALSE;
-};
-
-/*-
- *
  * TransportSend
  *
  * Purpose:

