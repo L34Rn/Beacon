@@ -70,10 +70,10 @@ DEFINESEC(B) VOID TransportFree( PBEACON_INSTANCE Ins )
 -*/
 DEFINESEC(B) BOOL TransportSend( PBEACON_INSTANCE Ins, PVOID Data, ULONG Size )
 {
-	return Ins->api.send(
-			Ins->Socket,
-			Data,
-			Size,
-			0
-	) == Size ? TRUE : FALSE;
+	if ( Ins->api.send( Ins->Socket, CPTR( &Size ), sizeof( ULONG ), 0 ) != SOCKET_ERROR )
+	{
+		return Ins->api.send( Ins->Socket, Data, Size, 0 ) != SOCKET_ERROR 
+			? TRUE : FALSE;
+	};
+	return FALSE;
 };

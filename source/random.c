@@ -15,7 +15,7 @@
  * Purpose:
  *
  * Returns a random long integer from
- * a range of 1 to LONG_MAX
+ * a range of 2 to LONG_MAX
  *
 -*/
 DEFINESEC(B) LONG RandomNumber32( PBEACON_INSTANCE Ins )
@@ -25,6 +25,7 @@ DEFINESEC(B) LONG RandomNumber32( PBEACON_INSTANCE Ins )
 	Seed = Ins->api.GetTickCount();
 	Seed = Ins->api.RtlRandomEx( &Seed );
 	Seed = Ins->api.RtlRandomEx( &Seed );
+	Seed = ( Seed % ( LONG_MAX - 2 + 1 ) ) + 2;
 
-	return 1 + Seed % ( LONG_MAX );
-}
+	return Seed % 2 == 0 ? Seed : Seed + 1;
+};
