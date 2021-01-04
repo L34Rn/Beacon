@@ -11,6 +11,7 @@
 #include <winsock2.h>
 #include <windows.h>
 #include <wincrypt.h>
+#include <limits.h>
 
 #include "macros.h"
 #include "hashes.h"

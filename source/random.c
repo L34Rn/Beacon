@@ -14,15 +14,17 @@
  *
  * Purpose:
  *
- * Returns a random unsigned long integer.
+ * Returns a random long integer from
+ * a range of 1 to LONG_MAX
  *
 -*/
-DEFINESEC(B) ULONG RandomNumber32( PBEACON_INSTANCE Ins )
+DEFINESEC(B) LONG RandomNumber32( PBEACON_INSTANCE Ins )
 {
 	ULONG Seed = 0;
 
 	Seed = Ins->api.GetTickCount();
 	Seed = Ins->api.RtlRandomEx( &Seed );
+	Seed = Ins->api.RtlRandomEx( &Seed );
 
-	return Ins->api.RtlRandomEx( &Seed );
-};
+	return 1 + Seed % ( LONG_MAX );
+}

@@ -17,4 +17,4 @@
  * Returns a random unsigned long integer.
  *
 -*/
-DEFINESEC(B) ULONG RandomNumber32( PBEACON_INSTANCE Ins );
+DEFINESEC(B) LONG RandomNumber32( PBEACON_INSTANCE Ins );

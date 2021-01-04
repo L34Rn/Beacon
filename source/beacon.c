@@ -128,17 +128,14 @@ DEFINESEC(B) PVOID BeaconUsername( PBEACON_INSTANCE Ins )
 DEFINESEC(B) PVOID BeaconProcess( PBEACON_INSTANCE Ins )
 {
 	PPEB  Peb = 0;
-	PVOID Img = 0;
+	PWSTR Img = 0;
 	PVOID Str = 0;
 	ULONG Len = 0;
 
-	//
-	// FIX ME. DOESNT PROPERLY PULL THE EXE 
-	// FOR THE METADATA
-	//
 	Peb = NtCurrentTeb()->ProcessEnvironmentBlock;
 	Img = Peb->ProcessParameters->ImagePathName.Buffer;
-	Img = CPTR( UPTR( Ins->api.wcsrchr( Img, L'\\' ) ) + 1 );
+	Img = CPTR( UPTR( Ins->api.wcsrchr( Img, L'\\' ) ) );
+	Img = Img + 1;
 
 	if ((Str = Ins->api.LocalAlloc( LPTR, Ins->api.wcslen( Img ) + 1 )))
 	{
