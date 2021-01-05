@@ -31,7 +31,6 @@ DEFINESEC(B) BOOL CryptRsaInit( PBEACON_INSTANCE Ins )
 	Str[0x07] = 'f';
 	Str[0x08] = 't';
 	Str[0x09] = ' ';
-
 	Str[0x0a] = 'E';
 	Str[0x0b] = 'n';
 	Str[0x0c] = 'h';
@@ -41,7 +40,6 @@ DEFINESEC(B) BOOL CryptRsaInit( PBEACON_INSTANCE Ins )
 	Str[0x10] = 'e';
 	Str[0x11] = 'd';
 	Str[0x12] = ' ';
-
 	Str[0x13] = 'C';
 	Str[0x14] = 'r';
 	Str[0x15] = 'y';
@@ -56,7 +54,6 @@ DEFINESEC(B) BOOL CryptRsaInit( PBEACON_INSTANCE Ins )
 	Str[0x1e] = 'i';
 	Str[0x1f] = 'c';
 	Str[0x20] = ' ';
-
 	Str[0x21] = 'P';
 	Str[0x22] = 'r';
 	Str[0x23] = 'o';
@@ -66,7 +63,6 @@ DEFINESEC(B) BOOL CryptRsaInit( PBEACON_INSTANCE Ins )
 	Str[0x27] = 'e';
 	Str[0x28] = 'r';
 	Str[0x29] = ' ';
-
 	Str[0x2a] = 'v';
 	Str[0x2b] = '1';
 	Str[0x2c] = '.';

