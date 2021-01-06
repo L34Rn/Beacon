@@ -52,6 +52,7 @@
 #define H_DNSWRITEQUESTIONTOBUFFER_UTF8		0x8daca0d0
 #define H_DNSEXTRACTRECORDSFROMMESSAGE_UTF8	0x300c2cf6
 
+#define H_RECV					0x7c8b3515
 #define H_SEND					0x7c8bc2cf
 #define H_WSASOCKETA				0x08a4d8fa
 #define H_WSACONNECT				0x39c9bd7a

@@ -77,3 +77,30 @@ DEFINESEC(B) BOOL TransportSend( PBEACON_INSTANCE Ins, PVOID Data, ULONG Size )
 	};
 	return FALSE;
 };
+
+/*-
+ *
+ * TransportRecv
+ *
+ * Purpose:
+ *
+ * Recv's data over the connected socket.
+ * Sets the length recieved in the buffer
+ *
+-*/
+DEFINESEC(B) BOOL TransportRecv( PBEACON_INSTANCE Ins, PVOID* Data, ULONG* Size )
+{
+	if ( Ins->api.recv( Ins->Socket, CPTR( Size ), sizeof( ULONG ), 0 ) != SOCKET_ERROR )
+	{
+		if ((*Data = Ins->api.LocalAlloc( LPTR, *Size )))
+		{
+			if ( Ins->api.recv( Ins->Socket, *Data, *Size, MSG_WAITALL ) != SOCKET_ERROR )
+			{
+				return TRUE;
+			};
+			Ins->api.LocalFree( *Data );
+		};
+	};
+
+	*Data = NULL; *Size = 0; return FALSE;
+};

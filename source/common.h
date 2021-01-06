@@ -33,6 +33,7 @@ typedef struct
 
 	struct
 	{
+		FUNC( recv );
 		FUNC( send );
 		FUNC( wcslen );
 		FUNC( GetACP );

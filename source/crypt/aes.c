@@ -126,3 +126,25 @@ DEFINESEC(B) VOID CryptAesFree( PBEACON_INSTANCE Ins )
 	Ins->api.CryptDestroyKey( Ins->key[1].Key );
 	Ins->api.CryptReleaseContext( Ins->key[1].Provider, 0 );
 };
+
+/*-
+ *
+ * CryptAesDecrypt
+ *
+ * Purpose:
+ *
+ * Decrypts the buffer using AES-128
+ * CBC.
+ *
+-*/
+DEFINESEC(B) BOOL CryptAesDecrypt( PBEACON_INSTANCE Ins, PVOID InOut, ULONG InOutLen )
+{
+	return Ins->api.CryptDecrypt(
+			Ins->key[1].Key,
+			0,
+			FALSE,
+			CRYPT_DECRYPT_RSA_NO_PADDING_CHECK,
+			InOut,
+			&InOutLen
+			);
+};
