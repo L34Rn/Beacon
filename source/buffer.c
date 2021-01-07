@@ -75,7 +75,7 @@ DEFINESEC(B) PVOID BufferAddRaw( PBEACON_INSTANCE Ins, PVOID Buffer, PVOID Value
 			Ins->api.LocalUnlock( Heap );
 		};
 	};
-	return Heap;
+	return Heap ? Heap : Buffer ;
 };
 
 /*-

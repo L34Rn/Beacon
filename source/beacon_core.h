@@ -26,6 +26,29 @@ typedef struct __attribute__((packed, scalar_storage_order("big-endian")))
 	UCHAR	Buffer[0];
 } BEACON_METADATA_HDR, *PBEACON_METADATA_HDR;
 
+typedef struct __attribute__((packed, scalar_storage_order("big-endian")))
+{
+	ULONG	Counter;
+	ULONG	Length;
+	ULONG	CallId;
+	ULONG	ArgLength;
+	UCHAR	Buffer[0];
+} BEACON_TASK_REQ_HDR, *PBEACON_TASK_REQ_HDR;
+
+typedef struct __attribute__((packed, scalar_storage_order("big-endian")))
+{
+	ULONG	Counter;
+	ULONG	Length;
+	ULONG	CallId;
+	UCHAR	Buffer[0];
+} BEACON_TASK_RES_HDR, *PBEACON_TASK_RES_HDR;
+
+typedef struct __attribute__((packed, scalar_storage_order("big-endian")))
+{
+	ULONG	Length;
+	UCHAR	Buffer[0];
+} BEACON_TASK_ENC_HDR, *PBEACON_TASK_ENC_HDR;
+
 /*-
  *
  * BeaconComputer

