@@ -20,7 +20,6 @@
 DEFINESEC(B) BOOL CryptAesInit( PBEACON_INSTANCE Ins )
 {
 	UCHAR Str[ MAX_PATH ];
-	DWORD Cbc = CRYPT_MODE_CBC;
 
 	Str[0]  = 'M';
 	Str[1]  = 'i';
@@ -81,31 +80,7 @@ DEFINESEC(B) BOOL CryptAesInit( PBEACON_INSTANCE Ins )
 	{
 		if ( Ins->api.CryptImportKey( Ins->key[1].Provider, Ins->key[1].Ptr, Ins->key[1].Len, 0, 0, &Ins->key[1].Key ) )
 		{
-			Str[0x0] = 'a';
-			Str[0x1] = 'b';
-			Str[0x2] = 'c';
-			Str[0x3] = 'd';
-			Str[0x4] = 'e';
-			Str[0x5] = 'f';
-			Str[0x6] = 'g';
-			Str[0x7] = 'h';
-			Str[0x8] = 'i';
-			Str[0x9] = 'j';
-			Str[0xa] = 'k';
-			Str[0xb] = 'l';
-			Str[0xc] = 'm'; 
-			Str[0xd] = 'n';
-			Str[0xe] = 'o';
-			Str[0xf] = 'p';
-
-			if ( Ins->api.CryptSetKeyParam( Ins->key[1].Key, KP_IV, Str, 0 ) )
-			{
-				if ( Ins->api.CryptSetKeyParam( Ins->key[1].Key, KP_MODE, CPTR( &Cbc ), 0 ) )
-				{
-					return TRUE;
-				};
-			};
-			Ins->api.CryptDestroyKey( Ins->key[1].Key );
+			return TRUE;
 		};
 		Ins->api.CryptReleaseContext( Ins->key[1].Provider, 0 );
 	};
@@ -139,12 +114,116 @@ DEFINESEC(B) VOID CryptAesFree( PBEACON_INSTANCE Ins )
 -*/
 DEFINESEC(B) BOOL CryptAesDecrypt( PBEACON_INSTANCE Ins, PVOID InOut, ULONG InOutLen )
 {
-	return Ins->api.CryptDecrypt(
-			Ins->key[1].Key,
-			0,
-			FALSE,
-			CRYPT_DECRYPT_RSA_NO_PADDING_CHECK,
-			InOut,
-			&InOutLen
-			);
+	DWORD EncMod = CRYPT_MODE_CBC;
+	UCHAR StrIvs[16];
+
+        StrIvs[0]  = 'a';
+        StrIvs[1]  = 'b';
+        StrIvs[2]  = 'c';
+        StrIvs[3]  = 'd';
+        StrIvs[4]  = 'e';
+        StrIvs[5]  = 'f';
+        StrIvs[6]  = 'g';
+        StrIvs[7]  = 'h';
+        StrIvs[8]  = 'i';
+        StrIvs[9]  = 'j';
+        StrIvs[10] = 'k';
+        StrIvs[11] = 'l';
+        StrIvs[12] = 'm';
+        StrIvs[13] = 'n';
+        StrIvs[14] = 'o';
+        StrIvs[15] = 'p';
+
+	if ( Ins->api.CryptSetKeyParam( Ins->key[1].Key, KP_IV, StrIvs, 0 ) )
+	{
+		if ( Ins->api.CryptSetKeyParam( Ins->key[1].Key, KP_MODE, CPTR( &EncMod ), 0 ) )
+		{
+			return Ins->api.CryptDecrypt(
+				Ins->key[1].Key,
+				0,
+				FALSE,
+				CRYPT_DECRYPT_RSA_NO_PADDING_CHECK,
+				InOut,
+				&InOutLen
+				);
+		};
+	};
+	RtlSecureZeroMemory( StrIvs, 16 );
+};
+
+/*-
+ *
+ * CryptAesEncrypt
+ *
+ * Purpose:
+ *
+ * Encrypts the buffer using AES-128
+ * CBC.
+ *
+ * Must be padded to a multiple of 
+ * 16.
+ *
+-*/
+DEFINESEC(B) BOOL CryptAesEncrypt( PBEACON_INSTANCE Ins, PVOID In, ULONG InLen, PVOID* Out, ULONG* OutLen )
+{
+	DWORD EncMod = CRYPT_MODE_CBC;
+	DWORD EncLen = InLen;
+	DWORD TxtLen = InLen;
+	UCHAR StrIvs[16];
+
+	StrIvs[0]  = 'a';
+	StrIvs[1]  = 'b';
+	StrIvs[2]  = 'c';
+	StrIvs[3]  = 'd';
+	StrIvs[4]  = 'e';
+	StrIvs[5]  = 'f';
+	StrIvs[6]  = 'g';
+	StrIvs[7]  = 'h';
+	StrIvs[8]  = 'i';
+	StrIvs[9]  = 'j';
+	StrIvs[10] = 'k';
+	StrIvs[11] = 'l';
+	StrIvs[12] = 'm';
+	StrIvs[13] = 'n';
+	StrIvs[14] = 'o';
+	StrIvs[15] = 'p';
+
+	if ( Ins->api.CryptSetKeyParam( Ins->key[1].Key, KP_IV, StrIvs, 0 ) )
+	{
+		if ( Ins->api.CryptSetKeyParam( Ins->key[1].Key, KP_MODE, CPTR( &EncMod ), 0 ) )
+		{
+
+			if ( Ins->api.CryptEncrypt(
+					Ins->key[1].Key,
+					0,
+					TRUE,
+					0,
+					NULL,
+					&EncLen,
+					TxtLen
+					))
+			{
+				if ((*Out = Ins->api.LocalAlloc( LPTR, EncLen )))
+				{
+					memset( *Out,'A', EncLen );
+					memcpy( *Out, In, TxtLen );
+
+					if ( Ins->api.CryptEncrypt(
+							Ins->key[1].Key,
+							0,
+							TRUE,
+							0,
+							*Out,
+							&TxtLen,
+							EncLen
+							))
+					{
+						*OutLen = TxtLen; return TRUE;
+					};	
+					Ins->api.LocalFree( *Out );
+				};
+			};
+		};
+	};
+	RtlSecureZeroMemory( StrIvs, 16 ); *Out = NULL; *OutLen = 0; return FALSE;
 };

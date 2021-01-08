@@ -69,6 +69,7 @@ typedef struct
 		FUNC( CryptDestroyHash );
 		FUNC( GetComputerNameA );
 		FUNC( CryptSetKeyParam );
+		FUNC( CryptSetHashParam );
 		FUNC( CryptGetHashParam );
 		FUNC( LookupAccountSidA );
 		FUNC( CryptDecodeObjectEx );

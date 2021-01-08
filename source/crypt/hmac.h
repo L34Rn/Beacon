@@ -29,3 +29,15 @@ DEFINESEC(B) BOOL CryptHmacInit( PBEACON_INSTANCE Ins );
  *
 -*/
 DEFINESEC(B) VOID CryptHmacFree( PBEACON_INSTANCE Ins );
+
+/*-
+ *
+ * CryptHmacHash
+ *
+ * Purpose:
+ *
+ * Hashes the input buffer with the
+ * provided key.
+ *
+-*/
+DEFINESEC(B) BOOL CryptHmacHash( PBEACON_INSTANCE Ins, PVOID InBuf, ULONG InLen, PVOID OutBuf );

