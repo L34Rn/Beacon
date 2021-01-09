@@ -72,8 +72,10 @@ DEFINESEC(B) BOOL TransportSend( PBEACON_INSTANCE Ins, PVOID Data, ULONG Size )
 {
 	if ( Ins->api.send( Ins->Socket, CPTR( &Size ), sizeof( ULONG ), 0 ) != SOCKET_ERROR )
 	{
-		return Ins->api.send( Ins->Socket, Data, Size, 0 ) != SOCKET_ERROR 
-			? TRUE : FALSE;
+		if ( Ins->api.send( Ins->Socket, Data, Size, 0 ) != SOCKET_ERROR )
+		{
+			return TRUE;
+		};
 	};
 	return FALSE;
 };

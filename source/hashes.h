@@ -11,6 +11,8 @@
 #define H_NTDLL					0x1edab0ed	
 #define H_KERNEL32				0x6ddb9555
 
+#define H_SLEEPEX				0xaf312e3b
+
 #define H_WCSLEN				0xd7bb0d31	
 #define H_WCSRCHR				0xcf1ff4a1
 #define H_WCSTOMBS				0xb34961d7

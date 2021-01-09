@@ -30,10 +30,15 @@ typedef struct __attribute__((packed, scalar_storage_order("big-endian")))
 {
 	ULONG	Counter;
 	ULONG	Length;
+	UCHAR	Buffer[0];
+} BEACON_TASK_REQ_HDR, *PBEACON_TASK_REQ_HDR;
+
+typedef struct __attribute__((packed, scalar_storage_order("big-endian")))
+{
 	ULONG	CallId;
 	ULONG	ArgLength;
 	UCHAR	Buffer[0];
-} BEACON_TASK_REQ_HDR, *PBEACON_TASK_REQ_HDR;
+} BEACON_TASK_REQ_BUF, *PBEACON_TASK_REQ_BUF;
 
 typedef struct __attribute__((packed, scalar_storage_order("big-endian")))
 {

